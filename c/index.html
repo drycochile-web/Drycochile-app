@@ -1,0 +1,45 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#0B1630">
+<title>Cotización · Dryco Chile</title><link rel="icon" type="image/png" href="../icons/favicon-32.png">
+<style>
+:root{--navy:#0B1630;--ink:#0D1B2E;--mut:#5B6B80;--line:#DFE6EF;--acc:#1F5CA1;--soft:#F3F6FB;--ok:#16865A;--bad:#C2362F}
+*{box-sizing:border-box}body{margin:0;background:#EEF2F8;color:var(--ink);font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:15px;line-height:1.45}
+.top{background:var(--navy);color:#fff;padding:22px 18px 26px;position:relative}.top:after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:linear-gradient(90deg,#8BE3DE,#5795DC,#4512BC)}
+.top img{height:34px;display:block}.top .k{font:700 11px Arial;letter-spacing:2px;color:#8BE3DE;margin-top:18px}.top h1{margin:6px 0 0;font-size:24px}
+.w{max-width:640px;margin:0 auto;padding:16px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;margin:0 0 14px;box-shadow:0 6px 20px rgba(11,22,48,.06)}
+.card h2{font-size:12px;letter-spacing:1.5px;color:var(--acc);margin:0 0 10px}.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}.kv dt{color:var(--mut)}.kv dd{margin:0}
+.tot{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line)}.tot:last-child{border:0}.tot.b{font-weight:700;font-size:18px}
+ul{margin:0;padding-left:18px}li{margin:4px 0}li b{display:block}li span{color:var(--mut);font-size:13.5px}
+label{display:block;font-weight:600;font-size:13px;color:var(--mut);margin:12px 0 5px}input,textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit;background:#F7F9FC}
+.chk{display:flex;gap:10px;align-items:flex-start;font-weight:400;color:var(--ink);font-size:14px}.chk input{width:auto;margin-top:3px}
+button{width:100%;margin-top:16px;border:0;border-radius:12px;background:var(--acc);color:#fff;font:700 16px Arial;padding:14px}button:disabled{opacity:.6}
+.ok{border-color:#9ED9BE;background:#E5F5EE}.err{color:var(--bad);margin-top:10px;min-height:1.2em}.mini{color:var(--mut);font-size:13px}
+.foot{text-align:center;color:var(--mut);font-size:12.5px;padding:10px 0 30px}.foot a{color:var(--acc)}
+</style></head><body>
+<div class="top"><img src="../icons/logo-blanco.png" alt="Dryco Chile"><div class="k">COTIZACIÓN</div><h1 id="t">Cargando…</h1></div>
+<div class="w" id="app"><div class="card"><p class="mini">Cargando la cotización…</p></div></div>
+<div class="foot">Dryco Chile SpA · RUT 78.517.352-K · Av. Apoquindo 6410, of. 212, Las Condes<br><a href="https://wa.me/56956069678">+56 9 5606 9678</a> · <a href="mailto:contacto@drycochile.cl">contacto@drycochile.cl</a> · <a href="https://drycochile.cl">drycochile.cl</a></div>
+<script>
+(function(){"use strict";
+var EXEC="https://script.google.com/macros/s/AKfycbzhS66Ekgyq2HF7yVkoACSj7WFBG5AD1Hyj1h0sC_NCJdzKDqi_niiHfNk-gMDgZKzHdA/exec",tok=(location.hash||"").replace(/^#/,""),A=document.getElementById("app"),T=document.getElementById("t");
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]})}
+function clp(n){return "$"+Math.round(+n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g,".")}
+function fd(s){if(!s)return "";var p=String(s).slice(0,10).split("-");return p[2]+"-"+p[1]+"-"+p[0]}
+function run(fn,args){return fetch(EXEC,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({fn:fn,args:args}),redirect:"follow"}).then(function(r){return r.json()}).then(function(o){if(o&&o.ok)return o.r;throw new Error(o&&o.e||"ERR")})}
+function bank(c){return '<div class="card"><h2>DATOS PARA EL ANTICIPO</h2><p style="margin:0 0 8px">Para coordinar el inicio, el anticipo es el <b>'+c.anticipo+' %</b>: <b>'+clp(Math.round(c.total*c.anticipo/100))+'</b>.</p><dl class="kv"><dt>Nombre</dt><dd>Drycochile SpA</dd><dt>RUT</dt><dd>78.517.352-K</dd><dt>Banco</dt><dd>BCI</dd><dt>Cuenta corriente</dt><dd>80992639</dd><dt>Correo</dt><dd>contacto@drycochile.cl</dd></dl></div>'}
+function show(c){T.textContent="N° "+c.numero+(c.cliente?" · "+c.cliente:"");
+  var h='<div class="card"><h2>DETALLE</h2><dl class="kv">'+(c.cliente?'<dt>Cliente</dt><dd>'+esc(c.cliente)+'</dd>':'')+(c.direccion?'<dt>Dirección</dt><dd>'+esc(c.direccion)+'</dd>':'')+'<dt>Fecha</dt><dd>'+esc(fd(c.fecha))+'</dd>'+(c.servicio?'<dt>Servicio</dt><dd>'+esc(c.servicio)+'</dd>':'')+(c.m2?'<dt>Superficie</dt><dd>'+esc(c.m2)+' m²</dd>':'')+(c.plazo?'<dt>Plazo</dt><dd>'+esc(c.plazo)+'</dd>':'')+(c.garantia?'<dt>Garantía</dt><dd>'+esc(c.garantia)+(/^\d+$/.test(String(c.garantia))?' meses':'')+'</dd>':'')+'</dl>'+(c.descripcion?'<p style="margin:12px 0 0">'+esc(c.descripcion)+'</p>':'')+'</div>';
+  if(c.items&&c.items.length)h+='<div class="card"><h2>INCLUYE</h2><ul>'+c.items.map(function(i){return '<li><b>'+esc(i.t)+'</b>'+(i.d?'<span>'+esc(i.d)+'</span>':'')+'</li>'}).join("")+'</ul></div>';
+  h+='<div class="card"><h2>VALORES</h2><div class="tot"><span>Neto</span><span>'+clp(c.neto)+'</span></div>'+(c.iva?'<div class="tot"><span>IVA 19 %</span><span>'+clp(c.iva)+'</span></div>':'')+'<div class="tot b"><span>Total</span><span>'+clp(c.total)+'</span></div><p class="mini" style="margin:10px 0 0">Forma de pago: '+c.anticipo+' % al aceptar (materialidad) y '+(100-c.anticipo)+' % al término de la obra.</p></div>';
+  if(c.estado==="Aceptada"){h+='<div class="card ok"><h2>COTIZACIÓN ACEPTADA</h2><p style="margin:0">'+(c.aceptadaPor?'Aceptada por <b>'+esc(c.aceptadaPor)+'</b>'+(c.aceptadaEl?' el '+esc(fd(c.aceptadaEl))+'.':'.'):'Esta cotización ya está aceptada.')+' Nos pondremos en contacto para coordinar el inicio.</p></div>'+bank(c)}
+  else if(c.estado==="Rechazada"){h+='<div class="card"><p style="margin:0">Esta cotización ya no está vigente. Escríbenos al <a href="https://wa.me/56956069678">+56 9 5606 9678</a> para actualizarla.</p></div>'}
+  else h+='<div class="card"><h2>ACEPTAR COTIZACIÓN</h2><form id="f"><label for="n">Nombre completo *</label><input id="n" autocomplete="name" required><label for="r">RUT (opcional)</label><input id="r" autocomplete="off"><label for="m">Comentario (opcional)</label><textarea id="m" rows="3" placeholder="Ej: fecha preferida para iniciar"></textarea><label class="chk"><input type="checkbox" id="ok" required> Acepto la cotización N° '+esc(c.numero)+' por '+clp(c.total)+', con el pago del '+c.anticipo+' % al iniciar y el '+(100-c.anticipo)+' % al término.</label><button id="b">Aceptar cotización</button><div class="err" id="e" role="alert"></div></form></div>';
+  A.innerHTML=h;var f=document.getElementById("f");if(!f)return;
+  f.addEventListener("submit",function(ev){ev.preventDefault();var n=document.getElementById("n").value.trim(),b=document.getElementById("b"),e=document.getElementById("e");
+    if(n.length<3){e.textContent="Escribe tu nombre completo.";return}if(!document.getElementById("ok").checked){e.textContent="Marca la casilla de aceptación.";return}
+    b.disabled=true;b.textContent="Enviando…";e.textContent="";
+    run("aceptarCot",[tok,n,document.getElementById("r").value.trim(),document.getElementById("m").value.trim()]).then(function(){c.estado="Aceptada";c.aceptadaPor=n;c.aceptadaEl=new Date().toISOString().slice(0,10);show(c);window.scrollTo(0,0)},function(){b.disabled=false;b.textContent="Aceptar cotización";e.textContent="No se pudo enviar. Revisa tu conexión o escríbenos al +56 9 5606 9678."})})}
+if(!/^[A-Za-z0-9]{24,64}$/.test(tok)){T.textContent="Enlace no válido";A.innerHTML='<div class="card"><p style="margin:0">El enlace no es válido. Pide uno nuevo a Dryco Chile al <a href="https://wa.me/56956069678">+56 9 5606 9678</a>.</p></div>';return}
+run("cotPublica",[tok]).then(function(s){show(JSON.parse(s))},function(){T.textContent="Cotización no disponible";A.innerHTML='<div class="card"><p style="margin:0">No encontramos esta cotización. Pide un enlace nuevo a Dryco Chile al <a href="https://wa.me/56956069678">+56 9 5606 9678</a>.</p></div>'})
+})();
+</script></body></html>
