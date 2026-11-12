@@ -38,7 +38,18 @@ function snap(c){return {docs:(DATA&&DATA[c]||[]).map(function(o){return {id:o.i
 function emit(c){(L[c]||[]).forEach(function(cb){try{cb(snap(c))}catch(e){console.error(e)}})}
 var loading=false;
 function setUser(u){USER=u;window.__ROLE=u&&u.rol;document.documentElement.classList.toggle("ro",!!u&&u.rol==="Solo lectura");document.documentElement.setAttribute("data-rol",u?u.rol:"");who()}
-function load(){if(!TOK||loading)return Promise.resolve();loading=true;return run("getAll",TOK).then(function(s){var r=JSON.parse(s);setUser(r.user);DATA=r.data;loading=false;Object.keys(L).forEach(emit)},function(e){loading=false;throw e})}
+/* Bandeja de importación: datos que Claude deja en Drive (Imágenes/importar.json), se cargan una sola vez por lote */
+var IMPDONE=false;
+function maybeImport(){if(IMPDONE||!USER||USER.rol!=="Administrador")return;IMPDONE=true;
+  run("img",TOK,"importar.json").then(function(b64){if(!b64)return;
+    var j=JSON.parse(decodeURIComponent(escape(atob(b64))));
+    var hechos=(DATA.importaciones||[]).map(function(x){return x.id});
+    if(!j.lote||hechos.indexOf(j.lote)>=0)return;
+    var p=Promise.resolve();(j.docs||[]).forEach(function(d){p=p.then(function(){return run("put",TOK,d.c,d.id,JSON.stringify(d.data),!!d.merge)})});
+    return p.then(function(){return run("put",TOK,"importaciones",j.lote,JSON.stringify({fecha:Date.now(),docs:(j.docs||[]).length,detalle:j.detalle||""}),false)})
+      .then(function(){return load()}).then(function(){try{var t=document.createElement("div");t.textContent="Datos agregados: "+(j.detalle||j.lote);t.style.cssText="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));background:#0B1630;color:#fff;padding:10px 16px;border-radius:12px;z-index:150;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)";document.body.appendChild(t);setTimeout(function(){t.remove()},6000)}catch(e){}})
+  }).catch(function(e){console.warn("importar",e)})}
+function load(){if(!TOK||loading)return Promise.resolve();loading=true;return run("getAll",TOK).then(function(s){var r=JSON.parse(s);setUser(r.user);DATA=r.data;loading=false;Object.keys(L).forEach(emit);maybeImport()},function(e){loading=false;throw e})}
 function nid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,9)}
 function setLocal(c,id,obj,merge){DATA=DATA||{};DATA[c]=DATA[c]||[];var i=-1;for(var k=0;k<DATA[c].length;k++)if(DATA[c][k].id===id){i=k;break}
   var v=merge&&i>=0?Object.assign({},DATA[c][i],obj):Object.assign({},obj);v.id=id;if(i>=0)DATA[c][i]=v;else DATA[c].push(v);emit(c)}
