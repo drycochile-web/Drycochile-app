@@ -444,6 +444,11 @@ a.btn{text-decoration:none;color:var(--ink)}a.btn.pri{color:#fff}
 .adet{border:1px solid var(--line);border-radius:12px;padding:10px 12px}.adet summary{cursor:pointer;font-weight:600;font-size:14px}.adet .fld{margin-top:10px}.adet textarea{min-height:190px}
 .gar .it .r .pill{white-space:nowrap}
 .newref{display:grid;gap:8px;margin-top:8px;padding:10px;border:1px dashed var(--accent);border-radius:10px;background:var(--accent-soft)}.newref input,.newref select{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 11px;width:100%}
+.glist{display:flex;flex-direction:column;gap:0}.card .glist{border-top:1px solid var(--line)}
+.gi{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}.gi:last-child{border-bottom:0}
+.sb .glist{border:1px solid var(--line);border-radius:12px}.sb .gi{padding:12px}
+.gt{display:flex;flex-direction:column;gap:2px;text-align:left;background:none;border:0;padding:0;min-width:0;flex:1 1 220px;color:inherit;font:inherit}.gt b{font-size:14px}.gt .mini{max-width:none}
+.gi .row-actions .btn{padding:6px 10px;font-size:13px}
 </style>
 
 <div class="app">
@@ -489,7 +494,7 @@ function ic(n){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor
 
 var SIST=["Poliuretano (Texpur + Polyglaze)","Acrílico (MC Proof DF8)","Cementicio flexible (MC Proof)","Poliuretano Sika","Epóxico / alto tráfico","Pinturas y revestimientos","Fragüe epóxico","General"];
 var SERV=["Cubiertas","Terrazas","Subterráneos y estacionamientos","Hormigón y estanques","Salas técnicas","Jardineras","Canales y canaletas","Fachadas","Otro"];
-var S={clientes:[],cotizaciones:[],obras:[],cobros:[],gastos:[],materiales:[],agenda:[],equipo:[],config:[],marketing:[],productos:[],ventas:[],servicios:[],plantillas:[]};
+var S={clientes:[],cotizaciones:[],obras:[],cobros:[],gastos:[],materiales:[],agenda:[],equipo:[],config:[],marketing:[],productos:[],ventas:[],servicios:[],plantillas:[],guias:[]};
 var loaded={};
 var SCH={
  clientes:{label:"Clientes",one:"cliente",icon:"cli",fields:[
@@ -602,6 +607,11 @@ var SCH={
   {k:"beneficios",l:"Beneficios",t:"area",full:1,hint:"Uno por línea"},
   {k:"observaciones",l:"Observaciones del procedimiento",t:"area",full:1},
   {k:"nota",l:"Nota bajo los beneficios",t:"area",full:1}]},
+ guias:{label:"Guías",one:"guía",icon:"serv",fields:[
+  {k:"titulo",l:"Título de la guía",t:"text",req:1,full:1},
+  {k:"servicio",l:"Servicio relacionado",t:"select",o:SERV,hint:"Aparece junto a la ficha de ese servicio"},
+  {k:"url",l:"Enlace",t:"text",req:1,full:1,hint:"Dirección de la guía en drycochile.cl"},
+  {k:"resumen",l:"Resumen para el cliente",t:"area",full:1,hint:"Se incluye en el mensaje de WhatsApp"}]},
  servicios:{label:"Servicios",one:"servicio",icon:"serv",fields:[
   {k:"nombre",l:"Servicio",t:"text",req:1,hint:"Nombre corto. Ej: Terrazas"},
   {k:"titulo",l:"Título para el cliente",t:"text",hint:"Ej: Impermeabilización de terrazas"},
@@ -795,7 +805,7 @@ function vAgenda(){
 
 /* ---------- generic list ---------- */
 function head(c,sub){var s=SCH[c];return '<div class="head"><div><h1>'+esc(s.label)+'</h1><p>'+esc(sub)+'</p></div><div class="row-actions">'+(c==="cotizaciones"?'<a class="btn" href="#cotpdf">'+ic("pdf")+'Cotizador rápido (PDF)</a>':'')+(c==="plantillas"?'<a class="btn" href="#cotpdf">'+ic("pdf")+'Volver al cotizador</a>':'')+((c==="obras"||c==="gastos"||c==="cobros")&&downloads?'<button class="btn" data-xlsx="all">'+ic("dl")+'Excel</button>':'')+(S[c].length?'<button class="btn" data-csv="'+c+'"'+(downloads?'':' hidden')+'>'+ic("dl")+'Exportar CSV</button>':'')+'<button class="btn pri add" data-new="'+c+'">'+ic("plus")+'Agregar '+esc(s.one)+'</button></div></div>'}
-var SUBS={plantillas:"Ítems, beneficios y observaciones que usa el cotizador rápido",servicios:"Fichas para enviar al cliente o mostrar en la visita",productos:"Fichas de los productos que vendes",ventas:"Ventas de productos Acrimper",clientes:"Personas, empresas y comunidades",cotizaciones:"Presupuestos enviados y su estado",obras:"Avance, cobros, gastos y ganancia por obra",cobros:"Pagos recibidos de tus clientes",gastos:"Compras y costos, por obra o generales",materiales:"Inventario de productos y stock mínimo",equipo:"Personas que trabajan contigo"};
+var SUBS={guias:"Guías de drycochile.cl para compartir con tus clientes",plantillas:"Ítems, beneficios y observaciones que usa el cotizador rápido",servicios:"Fichas para enviar al cliente o mostrar en la visita",productos:"Fichas de los productos que vendes",ventas:"Ventas de productos Acrimper",clientes:"Personas, empresas y comunidades",cotizaciones:"Presupuestos enviados y su estado",obras:"Avance, cobros, gastos y ganancia por obra",cobros:"Pagos recibidos de tus clientes",gastos:"Compras y costos, por obra o generales",materiales:"Inventario de productos y stock mínimo",equipo:"Personas que trabajan contigo"};
 function vList(c){
   var s=SCH[c];var rows=S[c].slice();
   var qq=q.trim().toLowerCase();
@@ -808,9 +818,9 @@ function vList(c){
   h+=summaryFor(c,rows);
   if(!S[c].length)return h+'<div class="card">'+emptyBox(EMPTY[c][0],EMPTY[c][1],c)+'</div>';
   if(!rows.length)return h+'<div class="card"><div class="empty"><b>Sin resultados</b>Prueba con otra búsqueda o filtro.</div></div>';
-  return h+'<div class="card list">'+rows.map(function(r){return rowHTML(c,r)}).join("")+'</div>';
+  return h+'<div class="card list">'+rows.map(function(r){return rowHTML(c,r)}).join("")+'</div>'+(c==="servicios"&&!qq?guiasCard():'');
 }
-var EMPTY={plantillas:["Aún no hay plantillas","Crea una plantilla con los ítems de cada sistema."],servicios:["Aún no hay servicios","Agrega la ficha de cada servicio para compartirla con tus clientes."],productos:["Aún no hay productos","Agrega la ficha de cada producto que vendes."],ventas:["Aún no hay ventas","Registra cada venta con su producto, cantidad y comprador."],clientes:["Aún no hay clientes","Registra a quién le cotizas para ver su historial de cotizaciones y obras."],cotizaciones:["Aún no hay cotizaciones","Registra cada presupuesto que envías y sigue su estado hasta que se acepte."],obras:["Aún no hay obras","Crea una obra al aceptarse una cotización para llevar avance, cobros y gastos."],cobros:["Aún no hay cobros","Registra anticipos y pagos para saber cuánto falta por cobrar."],gastos:["Aún no hay gastos","Anota compras de materiales, mano de obra y otros costos."],materiales:["Aún no hay materiales","Agrega tus productos con su stock mínimo."],equipo:["Aún no hay personas","Agrega a tu equipo para asignarlo a las obras."]};
+var EMPTY={guias:["Aún no hay guías","Agrega las guías de tu sitio para enviarlas por WhatsApp."],plantillas:["Aún no hay plantillas","Crea una plantilla con los ítems de cada sistema."],servicios:["Aún no hay servicios","Agrega la ficha de cada servicio para compartirla con tus clientes."],productos:["Aún no hay productos","Agrega la ficha de cada producto que vendes."],ventas:["Aún no hay ventas","Registra cada venta con su producto, cantidad y comprador."],clientes:["Aún no hay clientes","Registra a quién le cotizas para ver su historial de cotizaciones y obras."],cotizaciones:["Aún no hay cotizaciones","Registra cada presupuesto que envías y sigue su estado hasta que se acepte."],obras:["Aún no hay obras","Crea una obra al aceptarse una cotización para llevar avance, cobros y gastos."],cobros:["Aún no hay cobros","Registra anticipos y pagos para saber cuánto falta por cobrar."],gastos:["Aún no hay gastos","Anota compras de materiales, mano de obra y otros costos."],materiales:["Aún no hay materiales","Agrega tus productos con su stock mínimo."],equipo:["Aún no hay personas","Agrega a tu equipo para asignarlo a las obras."]};
 function searchText(c,r){var parts=[];SCH[c].fields.forEach(function(f){var v=r[f.k];if(f.t==="ref")v=nameOf(f.ref,v);if(f.t==="multi")v=(v||[]).map(function(x){return nameOf(f.ref,x)}).join(" ");parts.push(v)});return parts.join(" ").toLowerCase()}
 function sorter(c){
   if(c==="cotizaciones")return function(a,b){return (b.fecha||"").localeCompare(a.fecha||"")||String(b.numero).localeCompare(String(a.numero),undefined,{numeric:true})};
@@ -840,6 +850,7 @@ function rowHTML(c,r){
   if(c==="productos"){var mg=(+r.precioVenta||0)&&(+r.costo||0)?Math.round(100*((+r.precioVenta)-(+r.costo))/(+r.precioVenta))+" % margen":"";return '<div class="it"><button style="all:unset;cursor:pointer;min-width:0;display:grid;gap:2px" data-open="productos" data-id="'+r.id+'"><span class="t">'+esc(r.nombre)+'</span><span class="m">'+esc([r.presentacion,r.rendimiento,r.colores].filter(Boolean).join(" · "))+'</span></button><span class="r"><span class="amt">'+money(r.precioVenta)+'</span><span class="stockctl"><button data-pstk="-1" data-id="'+r.id+'" aria-label="Restar uno">−</button><b class="amt">'+num(r.stock)+'</b><button data-pstk="1" data-id="'+r.id+'" aria-label="Sumar uno">+</button></span><span class="sub">'+esc(mg||"en stock")+'</span></span></div>'}
   if(c==="ventas")return o+'<span class="t">'+esc(r.comprador||"Sin comprador")+' · '+num(r.cantidad)+' × '+esc(nameOf("productos",r.productoId)||"Producto eliminado")+'</span><span class="m">'+esc([fdate(r.fecha),r.comuna,r.entrega,r.documento].filter(Boolean).join(" · "))+'</span><span class="r"><span class="amt">'+money(ventaTotal(r))+'</span>'+(r.estado==="Pendiente de pago"?'<span class="pill warn">Por pagar</span>':r.estado==="Entregada"?'<span class="pill ok">Entregada</span>':'<span class="pill acc">Pagada</span>')+'</span></button>';
   if(c==="plantillas")return o+'<span class="t">'+esc(r.nombre)+'</span><span class="m">'+esc([r.servicio,plItems(r.items).length+" ítems",r.plazo].filter(Boolean).join(" · "))+'</span></button>';
+  if(c==="guias")return o+'<span class="t">'+esc(r.titulo)+'</span><span class="m">'+esc([r.servicio,String(r.url||"").replace(/^https?:\/\/(www\.)?/,"")].filter(Boolean).join(" · "))+'</span></button>';
   if(c==="servicios")return o+'<span class="t">'+esc(r.nombre)+'</span><span class="m">'+esc(r.titulo||"")+'</span><span class="r"><span class="sub">'+svLines(r.proceso).length+' pasos</span></span></button>';
   if(c==="equipo"){var no2=S.obras.filter(function(x){return (x.equipo||[]).indexOf(r.id)>=0&&x.estado!=="Terminada"}).length;return o+'<span class="t">'+esc(r.nombre)+'</span><span class="m">'+esc([r.rol,r.telefono].filter(Boolean).join(" · "))+'</span><span class="r">'+(r.activo==="No"?'<span class="pill">Inactivo</span>':'<span class="sub">'+no2+' obras activas'+(r.valorDia?' · '+money(r.valorDia)+'/día':'')+'</span>')+'</span></button>'}
   return o+'</button>';
@@ -1272,8 +1283,14 @@ function detailHTML(c,r){
     sb='<div class="svshare"><div class="row-actions">'+((window.__ROLE==="Administrador"||window.__ROLE==="Ventas")?'<label class="btn">'+ic("plus")+'Subir foto<input type="file" accept="image/*" data-svup="1" hidden></label>':'')+'<button class="btn pri" data-svpdf="share">'+ic("pdf")+'Compartir ficha PDF</button><button class="btn" data-svpdf="dl">'+ic("dl")+'Descargar ficha PDF</button><button class="btn" data-svshow="1">'+ic("eye")+'Mostrar al cliente</button></div><p class="mini" style="margin:0">Si tu teléfono no abre el menú de compartir, el PDF se descarga: adjúntalo en WhatsApp con el clip → Documento.</p>'+
        '<div class="fld" style="margin-top:4px"><label for="svcli">Enviar como texto a</label><select id="svcli" data-svcli="1"><option value="">Elegir el contacto en WhatsApp</option>'+conTel.map(function(x){return '<option value="'+x.id+'"'+(x.id===cli?" selected":"")+'>'+esc(x.nombre)+'</option>'}).join("")+'</select></div>'+
        '<div class="row-actions"><a class="btn" id="svwa" href="'+esc(svWa(r,cli))+'" target="_blank" rel="noopener">'+ic("wa")+'Texto por WhatsApp</a><button class="btn" data-svcopy="1">'+ic("copy")+'Copiar texto</button></div></div>';
+    var GR=guiasSorted().filter(function(g){return g.servicio&&g.servicio===r.servicio});
+    if(GR.length)sb+='<div class="sec">Guías para enviar junto con la ficha</div><div class="glist">'+GR.map(function(g){return '<div class="gi"><div class="gt"><b>'+esc(g.titulo)+'</b>'+(g.resumen?'<span class="mini">'+esc(g.resumen)+'</span>':'')+'</div>'+gActions(g,cli)+'</div>'}).join("")+'</div>';
     sb+=svBody(r,false);
     if(r.notasInternas)sb+='<div class="sec">Notas internas</div><div class="mini" style="white-space:pre-line">'+esc(r.notasInternas)+'</div>';
+  }else if(c==="guias"){
+    h='<div class="sh"><div><h2>'+esc(r.titulo)+'</h2><div class="mini">Guía · '+esc(r.servicio||"")+'</div></div><button class="x" data-close="1" aria-label="Cerrar">'+ic("x")+'</button></div>';
+    var cl2=sheetState&&sheetState.cli||"",ct2=S.clientes.filter(function(x){return x.telefono}).sort(sorter("clientes"));
+    sb=(r.resumen?'<p style="margin:0">'+esc(r.resumen)+'</p>':'')+'<div class="fld"><label for="gcli">Enviar a</label><select id="gcli" data-gcli="'+r.id+'"><option value="">Elegir el contacto en WhatsApp</option>'+ct2.map(function(x){return '<option value="'+x.id+'"'+(x.id===cl2?" selected":"")+'>'+esc(x.nombre)+'</option>'}).join("")+'</select></div>'+gActions(r,cl2)+'<dl class="kv">'+kv("Enlace",r.url)+'</dl>';
   }else if(c==="clientes"){
     var cs=S.cotizaciones.filter(function(x){return x.clienteId===r.id}),os=S.obras.filter(function(x){return x.clienteId===r.id});
     h='<div class="sh"><div><h2>'+esc(r.nombre)+'</h2><div class="mini">'+esc(r.tipo||"")+'</div></div><button class="x" data-close="1" aria-label="Cerrar">'+ic("x")+'</button></div>';
@@ -1334,6 +1351,14 @@ function svText(r,cliId){
   if(r.garantia)t+="*Garantía:* "+r.garantia+"\n";
   return t+"\n"+FIRMA;
 }
+function gText(g,cliId){var c=byId("clientes",cliId),t="";if(c){var who=String(c.contacto||c.nombre||"").split("·")[0].trim().split(/\s+/)[0];t+="Hola"+(who?" "+who:"")+", "}else t+="Hola, ";
+  t+="te comparto esta guía de Dryco Chile que explica tu caso:\n\n*"+g.titulo+"*\n";if(g.resumen)t+=g.resumen+"\n";return t+"\nLéela aquí: "+g.url+"\n\n"+FIRMA}
+function gWa(g,cliId){var c=byId("clientes",cliId),n="";if(c&&c.telefono){n=String(c.telefono).replace(/\D/g,"");if(n.length===9)n="56"+n}return "https://wa.me/"+n+"?text="+encodeURIComponent(gText(g,cliId))}
+function gActions(g,cli){return '<div class="row-actions"><a class="btn" data-gwa="'+g.id+'" href="'+esc(gWa(g,cli))+'" target="_blank" rel="noopener">'+ic("wa")+'WhatsApp</a><button class="btn" data-gcopy="'+g.id+'">'+ic("copy")+'Copiar enlace</button><a class="btn" href="'+esc(g.url)+'" target="_blank" rel="noopener">'+ic("eye")+'Ver guía</a></div>'}
+function guiasSorted(){return S.guias.slice().sort(function(a,b){return (SERV.indexOf(a.servicio)-SERV.indexOf(b.servicio))||String(a.titulo).localeCompare(String(b.titulo),"es")})}
+function guiasCard(){var G=guiasSorted();return '<div class="card"><div class="ch"><h3>Guías para compartir</h3><button class="btn add" data-new="guias">'+ic("plus")+'Agregar guía</button></div>'+(G.length?'<div class="glist">'+G.map(function(g){return '<div class="gi"><button class="gt" data-open="guias" data-id="'+g.id+'"><b>'+esc(g.titulo)+'</b><span class="mini">'+esc(g.servicio||"")+'</span></button>'+gActions(g,"")+'</div>'}).join("")+'</div>':'<div class="cb mini">Agrega las guías de drycochile.cl para enviarlas por WhatsApp con un toque.</div>')+'</div>'}
+function gCopy(g){var txt=g.url;function fb(){var ta=document.createElement("textarea");ta.value=txt;ta.style.cssText="position:fixed;top:0;left:0;opacity:0";document.body.appendChild(ta);ta.select();var ok=false;try{ok=document.execCommand("copy")}catch(e){}ta.remove();toast(ok?"Enlace copiado":"No se pudo copiar")}
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(function(){toast("Enlace copiado")},fb);else fb()}
 function svWa(r,cliId){var c=byId("clientes",cliId),n="";if(c&&c.telefono){n=String(c.telefono).replace(/\D/g,"");if(n.length===9)n="56"+n}return "https://wa.me/"+n+"?text="+encodeURIComponent(svText(r,cliId))}
 function svCopy(r,cliId){var txt=svText(r,cliId);
   function fb(){var ta=document.createElement("textarea");ta.value=txt;ta.setAttribute("readonly","");ta.style.cssText="position:fixed;top:0;left:0;opacity:0";document.body.appendChild(ta);ta.select();var ok=false;try{ok=document.execCommand("copy")}catch(e){}ta.remove();toast(ok?"Texto copiado":"No se pudo copiar automáticamente")}
@@ -1570,6 +1595,8 @@ document.addEventListener("change",function(e){if(!ACTA)return;var t=e.target;
   if(t.name==="acta_tipo"){actaRead();actaRender();return}
   if(t.id==="acta_fecha"||t.id==="acta_meses"){actaRead();actaRender()}});
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&ACTA)actaClose()});
+document.addEventListener("click",function(e){var t=e.target.closest("[data-gcopy]");if(!t)return;e.preventDefault();var g=byId("guias",t.dataset.gcopy);if(g)gCopy(g)});
+document.addEventListener("change",function(e){var t=e.target;if(!t.dataset||!(t.dataset.svcli||t.dataset.gcli))return;if(sheetState)sheetState.cli=t.value;[].slice.call(document.querySelectorAll("[data-gwa]")).forEach(function(a){var g=byId("guias",a.dataset.gwa);if(g)a.href=gWa(g,t.value)})});
 document.addEventListener("change",function(e){var t=e.target;if(!t.dataset||!t.dataset.newref)return;var b=document.getElementById("nr_"+t.dataset.newref);if(!b)return;b.hidden=t.value!=="__new__";if(!b.hidden){var i=b.querySelector("input");if(i)i.focus()}});
 
 /* ---------- events ---------- */
