@@ -1500,6 +1500,8 @@ function csv(c){if(!downloads)return;var s=SCH[c];var cols=s.fields.filter(funct
 function openMore(){var L=document.createElement("div");L.className="more";L.id="moremenu";L.innerHTML='<div class="pn">'+NAV.filter(function(n){return (!window.__can||window.__can(n[0]))&&!TABS.some(function(t){return t[0]===n[0]})}).map(function(n){return '<a href="#'+n[0]+'">'+ic(n[2])+n[1]+'</a>'}).join("")+'</div>';L.addEventListener("click",function(e){if(e.target===L)closeMore()});document.body.appendChild(L)}
 function closeMore(){var m=document.getElementById("moremenu");if(m)m.remove()}
 
+/* ---------- firma de Nicolás (imagen privada en Drive) ---------- */
+var FIRMA_P="img/firma-nicolas.jpg",TIMBRE_P="img/timbre-dryco.jpg";function firmaImg(){return svImg(FIRMA_P)}function timbreImg(){return svImg(TIMBRE_P)}function firmaLoad(){return Promise.all([loadImg(FIRMA_P),loadImg(TIMBRE_P)])}
 /* ---------- acta de entrega y certificado de garantía ---------- */
 var GAR_COND="La garantía cubre filtraciones a través de las superficies tratadas que se deban a defectos de los materiales o de su aplicación. En ese caso, Dryco Chile repara sin costo los materiales y la mano de obra.\nNo cubre catástrofes intencionales, naturales o de causa desconocida; daños causados por terceros o por intervenciones posteriores sobre las superficies tratadas (perforaciones, instalaciones, cambios de pavimento); movimientos estructurales mayores; uso distinto al previsto ni sectores no incluidos en el trabajo descrito.\nPara hacerla efectiva, el cliente debe avisar por escrito a contacto@drycochile.cl apenas detecte el problema, presentar este certificado y permitir una visita técnica de diagnóstico.\nSe recomienda una revisión preventiva anual de las superficies tratadas para mantener el sistema en óptimas condiciones.";
 var ACTA=null;
@@ -1575,9 +1577,9 @@ function buildActaPDF(A){
     sec("CONFORMIDAD");
     para("Quien firma declara recibir conforme los trabajos descritos, ejecutados por Dryco Chile SpA según lo cotizado, y que las superficies fueron entregadas limpias y en condiciones de uso, respetando los tiempos de curado indicados. Con esta fecha comienza a regir la garantía de "+A.meses+" meses, detallada en el certificado adjunto.",9.4);
     y+=4;var bw=(CW-24)/2,bh=90;
-    [[M,"RECIBE CONFORME",A.recibe||cli.nombre||"",A.rut?"RUT "+A.rut:"",A.firmaJ],[M+bw+24,"ENTREGA",EMP.firma,EMP.cargo+" · Dryco Chile SpA",null]].forEach(function(b){d.rrect(b[0],y,bw,bh,10,"#FFFFFF",PC.line,0.8);d.text(b[1],b[0]+12,y+17,{f:"B",sz:7,c:PC.mut,ls:1.2});
+    [[M,"RECIBE CONFORME",A.recibe||cli.nombre||"",A.rut?"RUT "+A.rut:"",A.firmaJ],[M+bw+24,"ENTREGA",EMP.firma,EMP.cargo+" · Dryco Chile SpA",firmaImg()]].forEach(function(b){d.rrect(b[0],y,bw,bh,10,"#FFFFFF",PC.line,0.8);d.text(b[1],b[0]+12,y+17,{f:"B",sz:7,c:PC.mut,ls:1.2});
       if(b[4]){var ih=36,iw=Math.min(bw-24,ih*b[4].w/b[4].h);d.image(b[4],b[0]+12,y+22,iw,ih)}
-      d.line(b[0]+12,y+bh-30,b[0]+bw-12,y+bh-30,PC.mut,0.6);d.text(b[2],b[0]+12,y+bh-17,{f:"B",sz:9,c:PC.ink});if(b[3])d.text(b[3],b[0]+12,y+bh-6,{sz:7.6,c:PC.mut})});
+      if(b[1]==="ENTREGA"&&timbreImg())d.image(timbreImg(),b[0]+bw-76,y+8,66,66);d.line(b[0]+12,y+bh-30,b[0]+bw-12,y+bh-30,PC.mut,0.6);d.text(b[2],b[0]+12,y+bh-17,{f:"B",sz:9,c:PC.ink});if(b[3])d.text(b[3],b[0]+12,y+bh-6,{sz:7.6,c:PC.mut})});
     y+=bh+10;
   }
   // certificado
@@ -1592,13 +1594,13 @@ function buildActaPDF(A){
   sec("COBERTURA Y CONDICIONES");
   String(A.cond||"").split(/\n+/).map(function(s){return s.trim()}).filter(Boolean).forEach(function(p){var ls=wrapText(p,"R",9.2,CW-16);if(y+ls.length*13>BOT)cont("Certificado de garantía");d.circle(M+3.4,y-3.1,2.4,PC.blue);ls.forEach(function(s){d.text(s,M+14,y,{sz:9.2,c:PC.ink});y+=13});y+=6});
   if(y+92>BOT)cont("Certificado de garantía");y+=14;
-  d.line(M,y+40,M+210,y+40,PC.mut,0.6);d.text(EMP.firma,M,y+54,{f:"B",sz:9.6,c:PC.ink});d.text(EMP.cargo+" · Dryco Chile SpA",M,y+66,{sz:8,c:PC.mut});d.text(EMP.mail2+" · "+EMP.tel,M,y+77,{sz:8,c:PC.mut});
+  var fi=firmaImg(),ti=timbreImg();if(ti)d.image(ti,M+222,y-8,86,86);if(fi){var fh=52,fw=fh*fi.w/fi.h;d.image(fi,M+6,y+42-fh,fw,fh)}d.line(M,y+40,M+210,y+40,PC.mut,0.6);d.text(EMP.firma,M,y+54,{f:"B",sz:9.6,c:PC.ink});d.text(EMP.cargo+" · Dryco Chile SpA",M,y+66,{sz:8,c:PC.mut});d.text(EMP.mail2+" · "+EMP.tel,M,y+77,{sz:8,c:PC.mut});
   d.rrect(W-M-170,y+8,170,64,10,PC.soft,PC.line,0.6);d.text("Emitido el "+actaLongDate(today()),W-M-160,y+30,{sz:8,c:PC.mut});d.text("Garantía N° "+num,W-M-160,y+46,{f:"B",sz:9,c:PC.navy});d.text("Conserve este documento",W-M-160,y+60,{sz:7.6,c:PC.mut});
   return d.output()}
 function actaFileName(A){var o=byId("obras",A.obraId)||{},cli=byId("clientes",o.clienteId)||{};return (A.tipo==="acta"?"Acta_entrega_y_garantia_":"Certificado_garantia_")+slug(cli.nombre||o.nombre)+"_"+A.fecha+".pdf"}
 function actaGenerate(share){actaRead();var A=ACTA;if(!A)return;
   if(!A.fecha){toast("Indica la fecha de entrega");return}if(!(+A.meses>0)){toast("Indica los meses de garantía");return}if(!String(A.trabajo||"").trim()){toast("Describe el trabajo realizado");return}
-  actaFirmaImg().then(function(fj){A.firmaJ=A.tipo==="acta"?fj:null;var bytes=buildActaPDF(A),name=actaFileName(A);
+  Promise.all([actaFirmaImg(),firmaLoad()]).then(function(aa){var fj=aa[0];A.firmaJ=A.tipo==="acta"?fj:null;var bytes=buildActaPDF(A),name=actaFileName(A);
     patch("obras",A.obraId,{garantia:+A.meses,garantiaDesde:A.fecha,garantiaVence:addMonths(A.fecha,A.meses),actaFecha:today(),actaTipo:A.tipo,sistemaAplicado:A.sistema||null});
     if(share){try{var f=new File([bytes],name,{type:"application/pdf"});if(navigator.canShare&&navigator.canShare({files:[f]})){actaClose();navigator.share({files:[f],title:name.replace(/_/g," ").replace(/\.pdf$/,"")}).then(function(){if(downloads&&window.__saveDriveOnly)window.__saveDriveOnly(bytes,name)}).catch(function(e){if(!e||e.name!=="AbortError")savePdf(bytes,name)});return}}catch(e){}}
     savePdf(bytes,name);actaClose()})}
@@ -1691,9 +1693,10 @@ function buildPagoPDF(r){var c=cobroInfo(r),cli=byId("clientes",r.clienteId)||{}
   d.text(c.pagada?"Saldo $ 0":clp(c.monto),M+18,y+50,{f:"B",sz:20,c:c.pagada?"#16865A":"#FFFFFF"});if(!c.pagada)d.text(c.concepto.charAt(0).toUpperCase()+c.concepto.slice(1),W-M-18,y+42,{sz:9,c:PC.sky,align:"right"});y+=88;
   if(!c.pagada){d.text("DATOS DE TRANSFERENCIA",M,y,{f:"B",sz:8.4,c:PC.acc,ls:1.4});y+=7;d.line(M,y,W-M,y,PC.line,0.6);y+=17;
     kv2([["Nombre","Drycochile SpA"],["RUT",EMP.rut],["Banco",EMP.banco],["Cuenta",EMP.tipoCta+" "+EMP.cuenta],["Correo",EMP.mail]])}
+  var fi3=firmaImg(),ti3=timbreImg();if(y<H-150){var yy=H-128;if(ti3)d.image(ti3,M+214,yy-58,78,78);if(fi3){var fh3=48,fw3=fh3*fi3.w/fi3.h;d.image(fi3,M+6,yy-fh3,fw3,fh3)}d.line(M,yy,M+200,yy,PC.mut,0.6);d.text(EMP.firma,M,yy+13,{f:"B",sz:9,c:PC.ink});d.text(EMP.cargo+" · Dryco Chile SpA",M,yy+25,{sz:7.8,c:PC.mut})}
   d.line(M,H-46,W-M,H-46,PC.line,0.6);d.text(EMP.razon+" · RUT "+EMP.rut+" · "+EMP.dir,M,H-32,{sz:7.2,c:PC.mut});d.text(EMP.firma+" · "+EMP.cargo+" · "+EMP.tel+" · "+EMP.mail2,M,H-21,{sz:7.2,c:PC.mut});
   return d.output()}
-function pagoPDF(r,share){var bytes=buildPagoPDF(r),name="Estado_de_pago_"+slug(r.nombre)+"_"+today()+".pdf";
+function pagoPDF(r,share){if(!IMGC[FIRMA_P]||IMGC[FIRMA_P].prom||!IMGC[TIMBRE_P]||IMGC[TIMBRE_P].prom){firmaLoad().then(function(){pagoPDF(r,share)});return}var bytes=buildPagoPDF(r),name="Estado_de_pago_"+slug(r.nombre)+"_"+today()+".pdf";
   if(share){try{var f=new File([bytes],name,{type:"application/pdf"});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:"Estado de pago · "+r.nombre}).catch(function(e){if(!e||e.name!=="AbortError")savePdf(bytes,name)});return}}catch(e){}}
   savePdf(bytes,name)}
 function resenaWa(r){var t=saludo(r.clienteId)+", muchas gracias por confiar en Dryco Chile. Si quedaste conforme con el trabajo, nos ayudaría mucho que dejaras tu opinión en Google (toma un minuto):\n\n"+REVIEW_URL+"\n\n¡Gracias!\n\n"+FIRMA;return "https://wa.me/"+waNum(r.clienteId)+"?text="+encodeURIComponent(t)}
@@ -1779,13 +1782,13 @@ function buildVisitaPDF(V,cliName){
   if(String(V.obs||"").trim()){sec("OBSERVACIONES");wrapText(V.obs,"R",9.6,CW).forEach(function(s){need(14);d.text(s,M,y,{sz:9.6,c:PC.ink});y+=13.4});y+=8}
   need(96);y+=6;d.rrect(M,y,CW,64,12,PC.soft,PC.line,0.6);d.text("PRÓXIMO PASO",M+16,y+22,{f:"B",sz:7.6,c:PC.acc,ls:1.4});
   wrapText("Le enviaremos la cotización con el sistema recomendado, el plazo y la garantía por escrito. Cualquier duda, estamos disponibles.","R",9.4,CW-32).forEach(function(s,k){d.text(s,M+16,y+38+k*12.6,{sz:9.4,c:PC.ink})});y+=84;
-  need(60);d.line(M,y+26,M+210,y+26,PC.mut,0.6);d.text(EMP.firma,M,y+40,{f:"B",sz:9.6,c:PC.ink});d.text(EMP.cargo+" · Dryco Chile SpA · "+EMP.tel,M,y+52,{sz:8,c:PC.mut});
+  need(76);y+=14;var fi2=firmaImg(),ti2=timbreImg();if(ti2)d.image(ti2,M+222,y-14,80,80);if(fi2){var fh2=50,fw2=fh2*fi2.w/fi2.h;d.image(fi2,M+6,y+26-fh2,fw2,fh2)}d.line(M,y+26,M+210,y+26,PC.mut,0.6);d.text(EMP.firma,M,y+40,{f:"B",sz:9.6,c:PC.ink});d.text(EMP.cargo+" · Dryco Chile SpA · "+EMP.tel,M,y+52,{sz:8,c:PC.mut});
   return d.output()}
 function visGenerate(share){visRead();var V=VIS;if(!V)return;
   if(!V.clienteId){toast("Elige el cliente");return}if(V.clienteId==="__new__"&&!String(V.nuevoNombre).trim()){toast("Escribe el nombre del cliente nuevo");return}
   if(!visLines(V.hallazgos).length&&!visLines(V.solucion).length){toast("Completa lo que encontraste o la solución recomendada");return}
   var pc=V.clienteId==="__new__"?(db?db.collection("clientes").add({nombre:V.nuevoNombre.trim(),tipo:"Persona",telefono:V.nuevoTel||null,email:null,direccion:V.direccion||null,comuna:null,rut:null,contacto:null,notas:"Creado desde un informe de visita técnica.",creado:Date.now()}).then(function(r){return r.id}):Promise.reject()):Promise.resolve(V.clienteId);
-  pc.then(function(cid){V.clienteId=cid;var cli=byId("clientes",cid)||{nombre:V.nuevoNombre};var bytes=buildVisitaPDF(V,cli.nombre),name="Informe_visita_tecnica_"+slug(cli.nombre)+"_"+V.fecha+".pdf";
+  Promise.all([pc,firmaLoad()]).then(function(aa){var cid=aa[0];V.clienteId=cid;var cli=byId("clientes",cid)||{nombre:V.nuevoNombre};var bytes=buildVisitaPDF(V,cli.nombre),name="Informe_visita_tecnica_"+slug(cli.nombre)+"_"+V.fecha+".pdf";
     var rec={clienteId:cid,fecha:V.fecha,direccion:V.direccion||null,servicio:V.servicio,m2:V.m2?+V.m2:null,urgencia:V.urgencia,motivo:V.motivo||null,hallazgos:V.hallazgos||null,causas:V.causas||null,solucion:V.solucion||null,obs:V.obs||null,fotos:V.fotos.length,creado:Date.now()};
     if(db){if(V.id)db.doc("visitas/"+V.id).set(rec);else db.collection("visitas").add(rec).then(function(r){V.id=r.id})}
     if(share){try{var f=new File([bytes],name,{type:"application/pdf"});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:"Informe de visita técnica"}).catch(function(e){if(!e||e.name!=="AbortError")savePdf(bytes,name)});visDone(cid);return}}catch(e){}}
