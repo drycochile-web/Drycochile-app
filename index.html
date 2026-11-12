@@ -663,15 +663,16 @@ function byId(c,id){if(!id)return null;for(var i=0;i<S[c].length;i++)if(S[c][i].
 function nameOf(c,id){var r=byId(c,id);if(!r)return "";return c==="cotizaciones"?("COT "+r.numero):(r.nombre||r.titulo||"")}
 function ventaTotal(v){return Math.round((+v.cantidad||0)*(+v.precioUnit||0)+(+v.despacho||0))}
 function obraCalc(o){var g=sum(S.gastos.filter(function(x){return x.obraId===o.id}),function(x){return x.monto});var c=sum(S.cobros.filter(function(x){return x.obraId===o.id}),function(x){return x.monto});var neto=+o.neto||0;var total=o.conIva==="No"?Math.round(neto):Math.round(neto*(1+IVA));return {gastos:g,cobrado:c,total:total,porCobrar:Math.max(0,total-c),ganancia:neto-g,margen:neto?(neto-g)/neto:0}}
+function obraCaja(o){var f=o.conIva==="No"?1:1+IVA,ant=0,fin=0;S.cobros.forEach(function(x){if(x.obraId!==o.id)return;var m=(+x.monto||0)/f;if(x.tipo==="Saldo final")fin+=m;else ant+=m});var g=obraCalc(o).gastos;return {ant:Math.round(ant),fin:Math.round(fin),gastos:g,ganancia:Math.round(ant+fin-g)}}
 function obraFecha(o){return o.termino||o.inicio||((byId("cotizaciones",o.cotizacionId)||{}).fecha)||""}
 /* Resultados por mes: cada obra cuenta completa (venta y todos sus gastos) en el mes en que termina.
    Las obras sin terminar no suman hasta que terminan; sus números nunca se reparten entre meses.
    Los gastos generales (sin obra) cuentan en el mes de su fecha. */
 function mesesRes(){
   var M={};function g(m){return M[m]||(M[m]={mes:m,obras:[],neto:0,gastosObras:0,gastosGen:0})}
-  S.obras.forEach(function(o){if(o.estado!=="Terminada")return;var m=obraFecha(o).slice(0,7);if(!m)return;var k=obraCalc(o),r=g(m);r.obras.push(o);r.neto+=+o.neto||0;r.gastosObras+=k.gastos});
+  S.obras.forEach(function(o){if(o.estado!=="Terminada")return;var m=obraFecha(o).slice(0,7);if(!m)return;var k=obraCalc(o),cj=obraCaja(o),r=g(m);r.obras.push(o);r.neto+=+o.neto||0;r.gastosObras+=k.gastos;r.ant=(r.ant||0)+cj.ant;r.fin=(r.fin||0)+cj.fin});
   S.gastos.forEach(function(x){if(x.obraId&&byId("obras",x.obraId))return;var m=(x.fecha||"").slice(0,7);if(!m)return;g(m).gastosGen+=+x.monto||0});
-  Object.keys(M).forEach(function(m){var r=M[m];r.gastos=r.gastosObras+r.gastosGen;r.ganancia=r.neto-r.gastos;r.margen=r.neto?r.ganancia/r.neto:0});
+  Object.keys(M).forEach(function(m){var r=M[m];r.ant=r.ant||0;r.fin=r.fin||0;r.gastos=r.gastosObras+r.gastosGen;r.ganancia=r.ant+r.fin-r.gastos;r.margen=r.neto?r.ganancia/r.neto:0});
   return M;
 }
 function enProceso(){var l=S.obras.filter(function(o){return o.estado!=="Terminada"});return {obras:l,neto:sum(l,function(o){return o.neto}),gastos:sum(l,function(o){return obraCalc(o).gastos})}}
@@ -733,20 +734,22 @@ function render(){if(window.__can&&!window.__can(route))route=window.__home();
 /* ---------- panel ---------- */
 function vPanel(){
   var t=today(),mo=t.slice(0,7),yr=t.slice(0,4);
-  var cotMes=S.cotizaciones.filter(function(c){return (c.fecha||"").slice(0,7)===mo&&c.estado!=="Borrador"});
-  var dec=S.cotizaciones.filter(function(c){return c.estado==="Aceptada"||c.estado==="Rechazada"});
-  var acc=dec.length?Math.round(100*dec.filter(function(c){return c.estado==="Aceptada"}).length/dec.length):null;
+  var cotMesAll=S.cotizaciones.filter(function(c){return (c.fecha||"").slice(0,7)===mo&&c.estado!=="Borrador"});
+  var cotMes=cotMesAll.filter(function(c){return c.estado!=="Rechazada"}),rechMes=cotMesAll.filter(function(c){return c.estado==="Rechazada"});
+  var nAc=S.cotizaciones.filter(function(c){return c.estado==="Aceptada"}).length,nRe=S.cotizaciones.filter(function(c){return c.estado==="Rechazada"}).length,nEn=S.cotizaciones.filter(function(c){return c.estado==="Enviada"}).length;
+  var dec={length:nAc+nRe};var acc=dec.length?Math.round(100*nAc/dec.length):null;
   var activas=S.obras.filter(function(o){return o.estado==="En curso"||o.estado==="Programada"||o.estado==="Pausada"});
   var pend=S.obras.filter(function(o){return o.estado==="Terminada"&&obraCalc(o).porCobrar>0});
   var porCobrar=sum(pend,function(o){return obraCalc(o).porCobrar});
+  var enCurso=S.obras.filter(function(o){return o.estado!=="Terminada"&&obraCalc(o).cobrado>0}),porTerminar=sum(enCurso,function(o){return obraCalc(o).porCobrar});
   var MR=mesesRes(),RM=MR[mo]||{obras:[],ganancia:0,neto:0};
   var gasMes=sum(S.gastos.filter(function(g){return (g.fecha||"").slice(0,7)===mo}),function(g){return g.monto});
   var h='<div class="head"><div><h1>Panel</h1><p>'+esc(fdate(t,true))+'</p></div><div class="row-actions"><button class="btn" data-xlsx="all"'+(downloads?'':' hidden')+'>'+ic("dl")+'Descargar Excel</button><button class="btn" data-new="agenda">'+ic("agenda")+'Agendar</button><button class="btn pri add" data-new="cotizaciones">'+ic("plus")+'Nueva cotización</button></div></div>';
   h+='<div class="kpis">'+
-   kpi("Cotizado este mes",money(sum(cotMes,function(c){return c.neto})),cotMes.length+" cotizaciones · neto")+
-   kpi("Tasa de aceptación",acc==null?"—":acc+" %",dec.length?dec.length+" cotizaciones con respuesta":"Sin respuestas aún")+
-   kpi("Por cobrar",money(porCobrar),pend.length?pend.length+(pend.length===1?" obra terminada":" obras terminadas")+" sin pago final · con IVA":"Sin obras terminadas por cobrar")+
-   kpi("Ganancia "+mesLabel(mo,true).replace(/ de \d{4}$/,""),money(RM.ganancia),RM.obras.length+(RM.obras.length===1?" obra terminada":" obras terminadas")+" este mes · neto menos gastos")+'</div>';
+   kpi("Cotizado este mes",money(sum(cotMes,function(c){return c.neto})),cotMes.length+" vigentes · neto"+(rechMes.length?(rechMes.length===1?" · descontada 1 rechazada (":" · descontadas "+rechMes.length+" rechazadas (")+money(sum(rechMes,function(c){return c.neto}))+")":""))+
+   kpi("Tasa de aceptación",acc==null?"—":acc+" %",dec.length?nAc+(nAc===1?" aceptada · ":" aceptadas · ")+nRe+(nRe===1?" rechazada":" rechazadas")+(nEn?" · "+nEn+" esperando":""):"Sin respuestas aún")+
+   kpi("Por cobrar",money(porCobrar),(pend.length?pend.length+(pend.length===1?" obra terminada":" obras terminadas")+" sin pagar · con IVA":"Obras terminadas: todas pagadas")+(porTerminar?" · en curso: "+money(porTerminar)+" al terminar":""))+
+   kpi("Ganancia "+mesLabel(mo,true).replace(/ de \d{4}$/,""),money(RM.ganancia),RM.obras.length?"Anticipos − gastos "+money((RM.ant||0)-(RM.gastos||0))+" + pagos finales "+money(RM.fin||0)+" · sin IVA":"Sin obras terminadas este mes")+'</div>';
   h+='<div class="grid2"><div class="card"><div class="ch"><h3>Venta y gastos por mes</h3><span class="mini">Últimos 6 meses · neto</span></div><div class="chart">'+chart(MR)+'</div><div class="legend"><span><i style="background:var(--accent)"></i>Obras terminadas</span><span><i style="background:var(--mut);opacity:.45"></i>Gastos de esas obras + generales</span></div></div>';
   // agenda next 7 days
   var up=S.agenda.filter(function(a){return !a.hecho&&a.fecha>=t&&a.fecha<=addDays(t,7)}).sort(agSort).slice(0,6);
