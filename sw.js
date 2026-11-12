@@ -1,5 +1,5 @@
 /* DrycoChile app: funciona como app instalada; siempre busca la versión nueva primero */
-const C = "dryco-v18";
+const C = "dryco-v19";
 self.addEventListener("install", e => { self.skipWaiting(); e.waitUntil(caches.open(C).then(c => c.addAll(["./", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png"]))); });
 self.addEventListener("activate", e => e.waitUntil(caches.keys().then(k => Promise.all(k.filter(x => x !== C).map(x => caches.delete(x)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", e => {
