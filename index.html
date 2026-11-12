@@ -611,7 +611,8 @@ var SCH={
   {k:"titulo",l:"Título de la guía",t:"text",req:1,full:1},
   {k:"servicio",l:"Servicio relacionado",t:"select",o:SERV,hint:"Aparece junto a la ficha de ese servicio"},
   {k:"url",l:"Enlace",t:"text",req:1,full:1,hint:"Dirección de la guía en drycochile.cl"},
-  {k:"resumen",l:"Resumen para el cliente",t:"area",full:1,hint:"Se incluye en el mensaje de WhatsApp"}]},
+  {k:"resumen",l:"Resumen para el cliente",t:"area",full:1,hint:"Va al inicio de la ficha PDF y en el mensaje de WhatsApp"},
+  {k:"contenido",l:"Contenido de la ficha PDF",t:"area",full:1,hint:"## Título de sección · ### Subtítulo · - viñeta · 1. paso · tablas: Criterio | Opción A | Opción B"}]},
  servicios:{label:"Servicios",one:"servicio",icon:"serv",fields:[
   {k:"nombre",l:"Servicio",t:"text",req:1,hint:"Nombre corto. Ej: Terrazas"},
   {k:"titulo",l:"Título para el cliente",t:"text",hint:"Ej: Impermeabilización de terrazas"},
@@ -1290,7 +1291,7 @@ function detailHTML(c,r){
   }else if(c==="guias"){
     h='<div class="sh"><div><h2>'+esc(r.titulo)+'</h2><div class="mini">Guía · '+esc(r.servicio||"")+'</div></div><button class="x" data-close="1" aria-label="Cerrar">'+ic("x")+'</button></div>';
     var cl2=sheetState&&sheetState.cli||"",ct2=S.clientes.filter(function(x){return x.telefono}).sort(sorter("clientes"));
-    sb=(r.resumen?'<p style="margin:0">'+esc(r.resumen)+'</p>':'')+'<div class="fld"><label for="gcli">Enviar a</label><select id="gcli" data-gcli="'+r.id+'"><option value="">Elegir el contacto en WhatsApp</option>'+ct2.map(function(x){return '<option value="'+x.id+'"'+(x.id===cl2?" selected":"")+'>'+esc(x.nombre)+'</option>'}).join("")+'</select></div>'+gActions(r,cl2)+'<dl class="kv">'+kv("Enlace",r.url)+'</dl>';
+    sb=(r.resumen?'<p style="margin:0">'+esc(r.resumen)+'</p>':'')+'<div class="fld"><label for="gcli">Enviar a</label><select id="gcli" data-gcli="'+r.id+'"><option value="">Elegir el contacto en WhatsApp</option>'+ct2.map(function(x){return '<option value="'+x.id+'"'+(x.id===cl2?" selected":"")+'>'+esc(x.nombre)+'</option>'}).join("")+'</select></div>'+gActions(r,cl2)+'<dl class="kv">'+kv("Versión web",r.url)+'</dl><div class="row-actions"><a class="btn" href="'+esc(r.url)+'" target="_blank" rel="noopener">'+ic("eye")+'Ver en drycochile.cl</a></div>';
   }else if(c==="clientes"){
     var cs=S.cotizaciones.filter(function(x){return x.clienteId===r.id}),os=S.obras.filter(function(x){return x.clienteId===r.id});
     h='<div class="sh"><div><h2>'+esc(r.nombre)+'</h2><div class="mini">'+esc(r.tipo||"")+'</div></div><button class="x" data-close="1" aria-label="Cerrar">'+ic("x")+'</button></div>';
@@ -1354,7 +1355,7 @@ function svText(r,cliId){
 function gText(g,cliId){var c=byId("clientes",cliId),t="";if(c){var who=String(c.contacto||c.nombre||"").split("·")[0].trim().split(/\s+/)[0];t+="Hola"+(who?" "+who:"")+", "}else t+="Hola, ";
   t+="te comparto esta guía de Dryco Chile que explica tu caso:\n\n*"+g.titulo+"*\n";if(g.resumen)t+=g.resumen+"\n";return t+"\nLéela aquí: "+g.url+"\n\n"+FIRMA}
 function gWa(g,cliId){var c=byId("clientes",cliId),n="";if(c&&c.telefono){n=String(c.telefono).replace(/\D/g,"");if(n.length===9)n="56"+n}return "https://wa.me/"+n+"?text="+encodeURIComponent(gText(g,cliId))}
-function gActions(g,cli){return '<div class="row-actions"><a class="btn" data-gwa="'+g.id+'" href="'+esc(gWa(g,cli))+'" target="_blank" rel="noopener">'+ic("wa")+'WhatsApp</a><button class="btn" data-gcopy="'+g.id+'">'+ic("copy")+'Copiar enlace</button><a class="btn" href="'+esc(g.url)+'" target="_blank" rel="noopener">'+ic("eye")+'Ver guía</a></div>'}
+function gActions(g,cli){return '<div class="row-actions"><button class="btn pri" data-gpdf="'+g.id+'">'+ic("pdf")+'Compartir PDF</button><button class="btn" data-gpdf="'+g.id+'" data-gmode="dl">'+ic("dl")+'Descargar PDF</button><a class="btn" data-gwa="'+g.id+'" href="'+esc(gWa(g,cli))+'" target="_blank" rel="noopener">'+ic("wa")+'Enlace por WhatsApp</a><button class="btn" data-gcopy="'+g.id+'">'+ic("copy")+'Copiar enlace</button></div>'}
 function guiasSorted(){return S.guias.slice().sort(function(a,b){return (SERV.indexOf(a.servicio)-SERV.indexOf(b.servicio))||String(a.titulo).localeCompare(String(b.titulo),"es")})}
 function guiasCard(){var G=guiasSorted();return '<div class="card"><div class="ch"><h3>Guías para compartir</h3><button class="btn add" data-new="guias">'+ic("plus")+'Agregar guía</button></div>'+(G.length?'<div class="glist">'+G.map(function(g){return '<div class="gi"><button class="gt" data-open="guias" data-id="'+g.id+'"><b>'+esc(g.titulo)+'</b><span class="mini">'+esc(g.servicio||"")+'</span></button>'+gActions(g,"")+'</div>'}).join("")+'</div>':'<div class="cb mini">Agrega las guías de drycochile.cl para enviarlas por WhatsApp con un toque.</div>')+'</div>'}
 function gCopy(g){var txt=g.url;function fb(){var ta=document.createElement("textarea");ta.value=txt;ta.style.cssText="position:fixed;top:0;left:0;opacity:0";document.body.appendChild(ta);ta.select();var ok=false;try{ok=document.execCommand("copy")}catch(e){}ta.remove();toast(ok?"Enlace copiado":"No se pudo copiar")}
@@ -1598,6 +1599,50 @@ document.addEventListener("keydown",function(e){if(e.key==="Escape"&&ACTA)actaCl
 document.addEventListener("click",function(e){var t=e.target.closest("[data-gcopy]");if(!t)return;e.preventDefault();var g=byId("guias",t.dataset.gcopy);if(g)gCopy(g)});
 document.addEventListener("change",function(e){var t=e.target;if(!t.dataset||!(t.dataset.svcli||t.dataset.gcli))return;if(sheetState)sheetState.cli=t.value;[].slice.call(document.querySelectorAll("[data-gwa]")).forEach(function(a){var g=byId("guias",a.dataset.gwa);if(g)a.href=gWa(g,t.value)})});
 document.addEventListener("change",function(e){var t=e.target;if(!t.dataset||!t.dataset.newref)return;var b=document.getElementById("nr_"+t.dataset.newref);if(!b)return;b.hidden=t.value!=="__new__";if(!b.hidden){var i=b.querySelector("input");if(i)i.focus()}});
+
+/* ---------- guías técnicas en PDF ---------- */
+function guiaSv(g){return S.servicios.filter(function(s){return s.servicio&&s.servicio===g.servicio}).sort(function(a,b){return (+a.orden||99)-(+b.orden||99)})[0]||null}
+function buildGuiaPDF(g){
+  var d=new PDFDoc(g.titulo+" · Guía técnica · Dryco Chile"),W=d.W,H=d.H,M=40,CW=W-2*M,y=0,BOT=H-50;
+  var tl=wrapText(g.titulo,"B",22,CW-10);
+  function band(){d.addPage();var bh=92+tl.length*26;d.rect(0,0,W,bh,PC.navy);d.image(LOGO_NAVY,M,24,132,132*LOGO_NAVY.h/LOGO_NAVY.w);
+    d.text("GUÍA TÉCNICA",W-M,36,{f:"B",sz:8.2,c:PC.cyan,ls:2,align:"right"});d.text((g.servicio||"Impermeabilización")+" · Santiago",W-M,50,{sz:8.3,c:PC.sky,align:"right"});
+    tl.forEach(function(s,i){d.text(s,M,94+i*26,{f:"B",sz:22,c:"#FFFFFF"})});d.grad(0,bh,W,4,GRAD);y=bh+20}
+  function cont(){d.addPage();d.rect(0,0,W,44,PC.navy);d.image(LOGO_NAVY,M,12,70,70*LOGO_NAVY.h/LOGO_NAVY.w);d.text(wrapText(g.titulo,"B",9,CW-110)[0],W-M,27,{f:"B",sz:9,c:"#FFFFFF",align:"right"});d.grad(0,44,W,3,GRAD);y=68}
+  function need(h){if(y+h>BOT)cont()}
+  function sec(t){need(64);y+=6;d.text(t.toUpperCase(),M,y,{f:"B",sz:8.6,c:PC.acc,ls:1.4});y+=7;d.line(M,y,W-M,y,PC.line,0.6);y+=15}
+  band();
+  var sv=guiaSv(g),f0=sv&&svFotos(sv)[0],hero=f0&&svImg(f0.src);
+  if(hero){var hh=Math.round(CW/3.2);d.imageR(hero,M,y,CW,hh,10);y+=hh+16}
+  if(g.resumen){wrapText(g.resumen,"R",11,CW).forEach(function(s){d.text(s,M,y,{sz:11,c:PC.ink});y+=15.5});y+=8}
+  var L=String(g.contenido||"").split(/\n/),i=0;
+  function bul(txt,mark){var ls=wrapText(txt,"R",9.6,CW-18);need(ls.length*13+4);if(mark)d.text(mark,M,y,{f:"B",sz:9.6,c:PC.acc});else d.circle(M+3.4,y-3.2,2.4,PC.blue);
+    ls.forEach(function(s){d.text(s,M+16,y,{sz:9.6,c:PC.ink});y+=13});y+=4}
+  while(i<L.length){var ln=L[i].replace(/\*\*/g,"").trim();i++;if(!ln)continue;
+    if(/^## /.test(ln)){var k2=i,nt=0;while(k2<L.length&&!L[k2].trim())k2++;while(k2<L.length&&/\|/.test(L[k2])){nt++;k2++}if(nt)need(Math.min(nt*24+64,BOT-90));sec(ln.slice(3));continue}
+    if(/^### /.test(ln)){var hs=wrapText(ln.slice(4),"B",10.6,CW);need(hs.length*14+30);hs.forEach(function(s){d.text(s,M,y,{f:"B",sz:10.6,c:PC.navy});y+=14});y+=2;continue}
+    if(/\|/.test(ln)){var T=[ln];while(i<L.length&&/\|/.test(L[i]))T.push(L[i++].replace(/\*\*/g,"").trim());
+      T=T.filter(function(r){return !/^[\s|:-]+$/.test(r)}).map(function(r){return r.replace(/^\||\|$/g,"").split("|").map(function(c){return c.trim()})});
+      var nc=T[0].length,c1=nc>2?CW*0.28:CW*0.4,cw=(CW-c1)/(nc-1);function cx(k){return k===0?M:M+c1+(k-1)*cw}function cwid(k){return k===0?c1:cw}
+      var RW=T.map(function(r,ri){var WL=r.map(function(c,k){return wrapText(c,ri===0||k===0?"B":"R",8.4,cwid(k)-14)});return {WL:WL,h:Math.max.apply(null,WL.map(function(w){return w.length}))*11+10}});
+      var tot=RW.reduce(function(a,r){return a+r.h},0);if(y+tot>BOT&&tot<BOT-90)cont();
+      function trow(R,ri){if(ri===0){d.rect(M,y,CW,R.h,PC.navy);if(nc>2)d.rect(cx(1),y,cw,R.h,PC.acc)}else if(ri%2===1)d.rect(M,y,CW,R.h,"#F5F8FC");
+        R.WL.forEach(function(w,k){w.forEach(function(s,j){d.text(s,cx(k)+7,y+13+j*11,{f:ri===0||k===0?"B":"R",sz:8.4,c:ri===0?"#FFFFFF":k===0?PC.navy:PC.ink})})});y+=R.h;if(ri>0)d.line(M,y,W-M,y,PC.line,0.5)}
+      RW.forEach(function(R,ri){if(y+R.h>BOT){cont();if(ri>0)trow(RW[0],0)}trow(R,ri)});y+=14;continue}
+    var mm=ln.match(/^(\d+)[.)]\s+(.*)$/);if(mm){bul(mm[2],mm[1]+".");continue}
+    if(/^[-•]\s+/.test(ln)){bul(ln.replace(/^[-•]\s+/,""));continue}
+    var ps=wrapText(ln,"R",9.8,CW);need(Math.min(ps.length,3)*13.6);ps.forEach(function(s){if(y>BOT)cont();d.text(s,M,y,{sz:9.8,c:PC.ink});y+=13.6});y+=6}
+  need(118);y+=8;d.rrect(M,y,CW,96,12,PC.navy);d.grad(M,y,CW,4,GRAD);
+  d.text("¿TIENE ESTE PROBLEMA?",M+18,y+26,{f:"B",sz:7.8,c:PC.cyan,ls:1.6});d.text("Agende una visita técnica",M+18,y+48,{f:"B",sz:15,c:"#FFFFFF"});
+  d.text("Diagnóstico en terreno y cotización sin compromiso.",M+18,y+64,{sz:9,c:PC.sky});
+  d.text(EMP.tel,W-M-18,y+40,{f:"B",sz:11,c:"#FFFFFF",align:"right",link:"https://wa.me/56956069678"});d.text(EMP.mail,W-M-18,y+56,{sz:9,c:PC.sky,align:"right",link:"mailto:"+EMP.mail});d.text(EMP.web,W-M-18,y+71,{sz:9,c:PC.sky,align:"right",link:"https://drycochile.cl"});
+  y+=110;if(g.url){d.text("Versión web de esta guía: "+String(g.url).replace(/^https?:\/\//,""),M,y,{sz:8,c:PC.mut,link:g.url})}
+  return d.output()}
+function guiaPDF(g,share){var sv=guiaSv(g),f0=sv&&svFotos(sv)[0];if(f0){var c=IMGC[f0.src];if(!c||!(c.bytes||c.err)){toast("Preparando la guía…");loadImg(f0.src).then(function(){guiaPDF(g,share)});return}}
+  var bytes=buildGuiaPDF(g),name="Guia_Dryco_Chile_"+slug(g.titulo)+".pdf";
+  if(share){try{var f=new File([bytes],name,{type:"application/pdf"});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:g.titulo}).catch(function(e){if(!e||e.name!=="AbortError")savePdf(bytes,name)});return}}catch(e){}}
+  savePdf(bytes,name)}
+document.addEventListener("click",function(e){var t=e.target.closest("[data-gpdf]");if(!t)return;e.preventDefault();var g=byId("guias",t.dataset.gpdf);if(g)guiaPDF(g,t.dataset.gmode!=="dl")});
 
 /* ---------- events ---------- */
 document.addEventListener("click",function(e){
