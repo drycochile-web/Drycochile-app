@@ -726,6 +726,7 @@ function save(c,id,data){
   data=clean(data);data.actualizado=Date.now();
   var p=id?db.doc(c+"/"+id).set(data):db.collection(c).add(Object.assign({creado:Date.now()},data));
   if(!id&&c==="cotizaciones"&&data.numero)p=p.then(function(r){corrAfterNew(data.numero);return r});
+  if(c==="cobros"&&data.tipo==="Saldo final"&&data.obraId)p=p.then(function(r){obraFinaliza(data.obraId,data.fecha);return r});
   return p.then(function(r){toast(id?"Cambios guardados":"Guardado");return r},function(e){toast(e&&e.code==="quota_exceeded"?"Se alcanzó el límite de registros":"No se pudo guardar. Intenta de nuevo.");throw e});
 }
 function patch(c,id,data){if(!db)return;return db.doc(c+"/"+id).update(data).catch(function(){toast("No se pudo actualizar")})}
@@ -1311,6 +1312,10 @@ document.addEventListener("click",function(e){var t=e.target.closest("[data-cobr
   if(t.dataset.cobrar){e.preventDefault();cobqOpen(t.dataset.cobrar);return}
   if(t.dataset.cobqx){var L=document.getElementById("cobw");if(L)L.remove();COBQ=null;return}
   if(t.dataset.cobqpdf&&COBQ){var r=byId("obras",COBQ.id);if(!(+COBQ.o.pct>0)){toast("Indica el porcentaje a cobrar");return}pagoPDF(r,t.dataset.cobqpdf==="share",Object.assign({},COBQ.o))}});
+function obraFinaliza(oid,fecha){var o=byId("obras",oid);if(!o||o.estado==="Terminada")return;var f=fecha||today();
+  patch("obras",oid,{estado:"Terminada",avance:100,termino:o.termino&&o.termino<=f?o.termino:f});
+  S.agenda.filter(function(a){return a.obraId===oid&&!a.hecho&&(a.fecha||"")<=f}).forEach(function(a){patch("agenda",a.id,{hecho:true})});
+  setTimeout(function(){toast("Pago final registrado: el proyecto quedó terminado")},400)}
 function confirmBox(){return '<div class="confirm"><span><b>¿Eliminar este registro?</b> No se puede deshacer.</span><span class="row-actions"><button type="button" class="btn" data-delno="1">No</button><button type="button" class="btn bad" data-delyes="1">Sí, eliminar</button></span></div>'}
 function field(f,val){
   var id="f_"+f.k,cls="fld"+(f.full?" full":""),lab='<label for="'+id+'">'+esc(f.l)+(f.req?" *":"")+'</label>',hint=f.hint?'<span class="hint">'+esc(f.hint)+'</span>':"";
