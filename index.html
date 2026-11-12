@@ -48,7 +48,7 @@ function maybeImport(){if(IMPDONE||!USER||USER.rol!=="Administrador")return;IMPD
     var p=Promise.resolve();(j.docs||[]).forEach(function(d){p=p.then(function(){return run("put",TOK,d.c,d.id,JSON.stringify(d.data),!!d.merge)})});
     return p.then(function(){return run("put",TOK,"importaciones",j.lote,JSON.stringify({fecha:Date.now(),docs:(j.docs||[]).length,detalle:j.detalle||""}),false)})
       .then(function(){return load()}).then(function(){try{var t=document.createElement("div");t.textContent="Datos agregados: "+(j.detalle||j.lote);t.style.cssText="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));background:#0B1630;color:#fff;padding:10px 16px;border-radius:12px;z-index:150;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)";document.body.appendChild(t);setTimeout(function(){t.remove()},6000)}catch(e){}})
-  }).catch(function(e){console.warn("importar",e)})}
+  }).catch(function(e){IMPDONE=false;console.warn("importar",e)})}
 function load(){if(!TOK||loading)return Promise.resolve();loading=true;return run("getAll",TOK).then(function(s){var r=JSON.parse(s);setUser(r.user);DATA=r.data;loading=false;Object.keys(L).forEach(emit);maybeImport()},function(e){loading=false;throw e})}
 function nid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,9)}
 function setLocal(c,id,obj,merge){DATA=DATA||{};DATA[c]=DATA[c]||[];var i=-1;for(var k=0;k<DATA[c].length;k++)if(DATA[c][k].id===id){i=k;break}
