@@ -566,7 +566,7 @@ var SCH={
   {k:"notas",l:"Notas",t:"area",full:1}]},
  gastos:{label:"Gastos",one:"gasto",icon:"gasto",filter:"categoria",fields:[
   {k:"fecha",l:"Fecha",t:"date",d:"today"},
-  {k:"monto",l:"Monto neto",t:"money",req:1},
+  {k:"monto",l:"Monto con IVA",t:"money",req:1,hint:"Total de la boleta o factura, IVA incluido"},
   {k:"categoria",l:"Categoría",t:"select",o:["Materiales","Mano de obra","Transporte y combustible","Herramientas y equipos","Publicidad","Administración","Otros"],d:"Materiales"},
   {k:"obraId",l:"Proyecto (opcional)",t:"ref",ref:"obras"},
   {k:"proveedor",l:"Proveedor",t:"text"},
@@ -1511,7 +1511,7 @@ function xlsxSheet(head,rows,money){var ws=XLSX.utils.aoa_to_sheet([head].concat
 function obraRow(o){var k=obraCalc(o);return [o.nombre,nameOf("clientes",o.clienteId),nameOf("cotizaciones",o.cotizacionId),o.estado,+o.avance||0,+o.neto||0,o.conIva==="No"?"No":"Sí",k.total,k.cobrado,k.porCobrar,k.gastos,k.ganancia,Math.round(k.margen*1000)/10,o.inicio||"",o.termino||"",[o.direccion,o.comuna].filter(Boolean).join(", "),o.notas||""]}
 var OH=["Proyecto","Cliente","Cotización","Estado","Avance %","Neto","Con IVA","Total a cobrar","Cobrado","Por cobrar","Gastos","Ganancia","Margen %","Inicio","Término","Dirección","Notas"],OM=[5,7,8,9,10,11];
 function gastoRows(list){return list.map(function(g){return [g.fecha||"",nameOf("obras",g.obraId),g.categoria||"",g.proveedor||"",g.descripcion||"",g.documento||"",+g.monto||0]})}
-var GH=["Fecha","Proyecto","Categoría","Proveedor","Descripción","Documento","Monto neto"];
+var GH=["Fecha","Proyecto","Categoría","Proveedor","Descripción","Documento","Monto con IVA"];
 function cobroRows(list){return list.map(function(c){return [c.fecha||"",nameOf("obras",c.obraId),c.tipo||"",c.medio||"",c.documento||"",+c.monto||0]})}
 var CH=["Fecha","Proyecto","Tipo","Medio","Documento","Monto"];
 function byFecha(a,b){return (a.fecha||"").localeCompare(b.fecha||"")}
@@ -1726,7 +1726,7 @@ function waNum(cliId){var c=byId("clientes",cliId),n="";if(c&&c.telefono){n=Stri
 function saludo(cliId){var c=byId("clientes",cliId);var who=c?String(c.contacto||c.nombre||"").split("·")[0].trim().split(/\s+/)[0]:"";return "Hola"+(who?" "+who:"")}
 function topeHTML(r){var neto=+r.neto||0;if(!neto)return "";var k=obraCalc(r),tope=Math.round(neto*TOPE),g=k.gastos,p=g/neto,over=g>tope,cls=g>neto?"bad":over?"warn":"ok";
   var msg=over?"Superaste el 60 % por "+money(g-tope)+". La ganancia baja a "+Math.round((1-p)*100)+" % del neto ("+money(neto-g)+").":"Quedan "+money(tope-g)+" dentro del 60 %. Ganancia proyectada: "+Math.round((1-p)*100)+" % del neto ("+money(neto-g)+").";
-  return '<div class="tope '+cls+'"><div class="tt"><b>Gastos '+money(g)+' · '+Math.round(p*100)+' % del neto</b><span>Tope 60 % (anticipo de materialidad): '+money(tope)+'</span></div><span class="tbar"><i style="width:'+Math.min(100,tope?g/tope*100:0)+'%"></i></span><div class="mini">'+msg+'</div></div>'}
+  return '<div class="tope '+cls+'"><div class="tt"><b>Gastos '+money(g)+' con IVA · '+Math.round(p*100)+' % del neto</b><span>Tope 60 % (anticipo de materialidad): '+money(tope)+'</span></div><span class="tbar"><i style="width:'+Math.min(100,tope?g/tope*100:0)+'%"></i></span><div class="mini">'+msg+'</div></div>'}
 function cobroInfo(r){var k=obraCalc(r),ant=Math.round(k.total*TOPE),pend=k.porCobrar;var first=!k.cobrado&&r.estado!=="Terminada";
   return {k:k,monto:first?ant:pend,concepto:first?"anticipo del 60 % para iniciar (materialidad)":(r.estado==="Terminada"?"saldo final al término del proyecto":"saldo pendiente"),pagada:pend<=0}}
 function cobroText(r){var c=cobroInfo(r),iva=r.conIva==="No"?" (sin IVA)":" (IVA incluido)";
@@ -1891,7 +1891,7 @@ function kpiOpen(k,arg){var t=today(),mo=t.slice(0,7),h="",title="",sub="";
     var te=S.obras.filter(function(o){return o.estado==="Terminada"&&obraCalc(o).porCobrar>0}),cu=S.obras.filter(function(o){return o.estado!=="Terminada"&&obraCalc(o).cobrado>0&&obraCalc(o).porCobrar>0}),sa=S.obras.filter(function(o){return o.estado!=="Terminada"&&!obraCalc(o).cobrado});
     title="Por cobrar";sub="Con IVA · toca un proyecto para cobrar por WhatsApp";h=blk("Proyectos terminados sin pagar",te.map(function(o){return pr(o,'<span class="pill bad">Cobrar</span>')}),"Todos los proyectos terminados están pagados.",money(sum(te,function(o){return obraCalc(o).porCobrar})))+blk("En curso: saldo al terminar (40 %)",cu.map(function(o){return pr(o)}),"Sin saldos de proyectos en curso.",cu.length?money(sum(cu,function(o){return obraCalc(o).porCobrar})):null)+blk("Sin anticipo registrado",sa.map(function(o){return pr(o,'<span class="pill warn">Anticipo</span>')}),"Todos los proyectos en curso tienen anticipo registrado.",null)}
   else if(k==="ganancia"){var MR=mesesRes(),RM=MR[mo]||{obras:[],ant:0,fin:0,gastos:0,gastosGen:0,ganancia:0};
-    title="Ganancia de "+mesLabel(mo,true).replace(/ de \d{4}$/,"");sub="Lo pagado sin IVA, menos gastos";
+    title="Ganancia de "+mesLabel(mo,true).replace(/ de \d{4}$/,"");sub="Lo pagado sin IVA, menos los gastos con IVA";
     h=blk("Proyectos terminados este mes",RM.obras.map(function(o){var cj=obraCaja(o);return '<button class="it" data-open="obras" data-id="'+o.id+'"><span class="t">'+esc(o.nombre)+'</span><span class="m">Anticipo '+money(cj.ant)+' − gastos '+money(cj.gastos)+' + pago final '+money(cj.fin)+'</span><span class="r"><span class="amt" style="color:'+(cj.ganancia<0?"var(--bad)":"var(--ok)")+'">'+money(cj.ganancia)+'</span></span></button>'}),"Aún no terminas proyectos este mes.",null);
     h+='<div class="sum"><div><span>Anticipos − gastos de proyectos</span><b>'+money(RM.ant-(RM.gastosObras||0))+'</b></div><div><span>Pagos finales</span><b>'+money(RM.fin)+'</b></div><div><span>Gastos generales del mes</span><b>'+money(-(RM.gastosGen||0))+'</b></div><div><span>Ganancia</span><b style="color:'+(RM.ganancia<0?"var(--bad)":"var(--ok)")+'">'+money(RM.ganancia)+'</b></div></div>'}
   var L=document.getElementById("kpiw");if(!L){L=document.createElement("div");L.id="kpiw";L.className="actaw";L.setAttribute("role","dialog");L.setAttribute("aria-modal","true");document.body.appendChild(L)}
