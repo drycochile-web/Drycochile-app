@@ -464,6 +464,8 @@ html[data-rol] #acrw .acqsum{display:grid!important}
 .calb{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;border:1px solid var(--line);color:var(--accent);flex:none;background:var(--surface)}.calb svg{width:16px;height:16px}
 .kpib .v{font-size:clamp(19px,5.6vw,24px)}.kpib{text-align:left;cursor:pointer;font:inherit;color:inherit;width:100%;transition:box-shadow .15s,border-color .15s}.kpib:hover{border-color:var(--accent)}.kpi .l{display:flex;justify-content:space-between;align-items:center;gap:6px}.kgo{font-size:11.5px;font-weight:600;color:var(--accent);letter-spacing:0;text-transform:none}
 #kpiw .sum{margin-top:6px}
+.ivac{display:block;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;margin:14px 0}.ivac .ch{display:flex;justify-content:space-between;align-items:center}
+.ivag{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:0 16px 14px}.ivag div{background:var(--surface2);border-radius:12px;padding:10px 12px;display:grid;gap:2px}.ivag span{font-size:11.5px;color:var(--mut)}.ivag b{font-size:clamp(15px,4.4vw,19px);white-space:nowrap}.ivag .ok b{color:var(--ok)}
 .tmes{display:grid;border:1px solid var(--line);border-radius:12px;overflow:hidden}.tmh,.tmr{display:grid;grid-template-columns:1fr .8fr .8fr .8fr .9fr 1.2fr;gap:6px;align-items:center;padding:9px 12px;font-size:13px;text-align:right}
 .tmh{background:var(--surface2);font-size:11.5px;color:var(--mut);font-weight:600}.tmh span:first-child,.tmr span:first-child{text-align:left}
 .tmr{all:unset;display:grid;grid-template-columns:1fr .8fr .8fr .8fr .9fr 1.2fr;gap:6px;align-items:center;padding:9px 12px;font-size:13px;text-align:right;border-top:1px solid var(--line);cursor:pointer}.tmr:hover,.tmr.on{background:var(--surface2)}
@@ -682,7 +684,9 @@ function ventaTotal(v){return Math.round((+v.cantidad||0)*(+v.precioUnit||0)+(+v
 function cobIva(x,o){var v=x&&x.conIva;if(v==="Sin IVA"||v==="No")return false;if(v==="Con IVA"||v==="Sí")return true;return !(o&&o.conIva==="No")}
 function cobNeto(x,o){var m=+x.monto||0;return cobIva(x,o)?m/(1+IVA):m}
 function antPct(o){var p=+(o&&o.anticipoPct);return p>0&&p<=100?p:60}
-function obraCalc(o){var g=sum(S.gastos.filter(function(x){return x.obraId===o.id}),function(x){return x.monto});var cb=S.cobros.filter(function(x){return x.obraId===o.id});var c=sum(cb,function(x){return x.monto});var cn=sum(cb,function(x){return cobNeto(x,o)});var neto=+o.neto||0;var f=o.conIva==="No"?1:1+IVA;var total=Math.round(neto*f);var pn=neto-cn;var pc=pn>5?Math.round(pn*f):0;return {gastos:g,cobrado:c,cobradoNeto:Math.round(cn),total:total,porCobrar:pc,ganancia:neto-g,margen:neto?(neto-g)/neto:0}}
+function gCost(x){var m=+x.monto||0;return x.documento==="Factura"?Math.round(m/(1+IVA)):m}
+function gIva(x){var m=+x.monto||0;return x.documento==="Factura"?m-Math.round(m/(1+IVA)):0}
+function obraCalc(o){var g=sum(S.gastos.filter(function(x){return x.obraId===o.id}),gCost);var cb=S.cobros.filter(function(x){return x.obraId===o.id});var c=sum(cb,function(x){return x.monto});var cn=sum(cb,function(x){return cobNeto(x,o)});var neto=+o.neto||0;var f=o.conIva==="No"?1:1+IVA;var total=Math.round(neto*f);var pn=neto-cn;var pc=pn>5?Math.round(pn*f):0;return {gastos:g,cobrado:c,cobradoNeto:Math.round(cn),total:total,porCobrar:pc,ganancia:neto-g,margen:neto?(neto-g)/neto:0}}
 function obraCaja(o){var ant=0,fin=0;S.cobros.forEach(function(x){if(x.obraId!==o.id)return;var m=cobNeto(x,o);if(x.tipo==="Saldo final")fin+=m;else ant+=m});var g=obraCalc(o).gastos;return {ant:Math.round(ant),fin:Math.round(fin),gastos:g,ganancia:Math.round(ant+fin-g)}}
 function obraFecha(o){return o.termino||o.inicio||((byId("cotizaciones",o.cotizacionId)||{}).fecha)||""}
 /* Resultados por mes: cada proyecto cuenta completa (venta y todos sus gastos) en el mes en que termina.
@@ -691,7 +695,7 @@ function obraFecha(o){return o.termino||o.inicio||((byId("cotizaciones",o.cotiza
 function mesesRes(){
   var M={};function g(m){return M[m]||(M[m]={mes:m,obras:[],neto:0,gastosObras:0,gastosGen:0})}
   S.obras.forEach(function(o){if(o.estado!=="Terminada")return;var m=obraFecha(o).slice(0,7);if(!m)return;var k=obraCalc(o),cj=obraCaja(o),r=g(m);r.obras.push(o);r.neto+=+o.neto||0;r.gastosObras+=k.gastos;r.ant=(r.ant||0)+cj.ant;r.fin=(r.fin||0)+cj.fin});
-  S.gastos.forEach(function(x){if(x.obraId&&byId("obras",x.obraId))return;var m=(x.fecha||"").slice(0,7);if(!m)return;g(m).gastosGen+=+x.monto||0});
+  S.gastos.forEach(function(x){if(x.obraId&&byId("obras",x.obraId))return;var m=(x.fecha||"").slice(0,7);if(!m)return;g(m).gastosGen+=gCost(x)});
   Object.keys(M).forEach(function(m){var r=M[m];r.ant=r.ant||0;r.fin=r.fin||0;r.gastos=r.gastosObras+r.gastosGen;r.ganancia=r.ant+r.fin-r.gastos;r.margen=r.neto?r.ganancia/r.neto:0});
   return M;
 }
@@ -765,13 +769,14 @@ function vPanel(){
   var porCobrar=sum(pend,function(o){return obraCalc(o).porCobrar});
   var enCurso=S.obras.filter(function(o){return o.estado!=="Terminada"&&obraCalc(o).cobrado>0}),porTerminar=sum(enCurso,function(o){return obraCalc(o).porCobrar});
   var MR=mesesRes(),RM=MR[mo]||{obras:[],ganancia:0,neto:0};
-  var gasMes=sum(S.gastos.filter(function(g){return (g.fecha||"").slice(0,7)===mo}),function(g){return g.monto});
+  var gasMes=sum(S.gastos.filter(function(g){return (g.fecha||"").slice(0,7)===mo}),gCost);
   var h='<div class="head"><div><h1>Panel</h1><p>'+esc(fdate(t,true))+'</p></div><div class="row-actions"><button class="btn" data-xlsx="all"'+(downloads?'':' hidden')+'>'+ic("dl")+'Descargar Excel</button><button class="btn" data-new="agenda">'+ic("agenda")+'Agendar</button><button class="btn pri add" data-new="cotizaciones">'+ic("plus")+'Nueva cotización</button></div></div>';
   h+='<div class="kpis">'+
    kpi("Cotizado este mes",money(sum(cotMes,function(c){return c.neto})),cotMes.length+(cotMes.length===1?" cotización · neto":" cotizaciones · neto"),"cot")+
    (function(){var TM=tasaMes(mo),r=TM.ac.length+TM.re.length;return kpi("Aceptación "+mesLabel(mo,true).replace(/ de \d{4}$/,""),TM.tasa==null?"—":TM.tasa+" %",r?TM.ac.length+" de "+r+" respondidas"+(TM.en.length?" · "+TM.en.length+" esperando":""):(TM.en.length?TM.en.length+" esperando respuesta":"Sin cotizaciones respondidas"),"tasa")})()+
    kpi("Por cobrar",money(porCobrar),(pend.length?pend.length+(pend.length===1?" proyecto terminado · con IVA":" proyectos terminados · con IVA"):"Todo pagado"),"cobrar")+
    kpi("Ganancia "+mesLabel(mo,true).replace(/ de \d{4}$/,""),money(RM.ganancia),RM.obras.length?RM.obras.length+(RM.obras.length===1?" proyecto · sin IVA":" proyectos · sin IVA"):"Sin proyectos terminados","ganancia")+'</div>';
+  h+=ivaCard(mo);
   h+='<div class="grid2"><div class="card"><div class="ch"><h3>Venta y gastos por mes</h3><span class="mini">Últimos 6 meses · neto</span></div><div class="chart">'+chart(MR)+'</div><div class="legend"><span><i style="background:var(--accent)"></i>Proyectos terminados</span><span><i style="background:var(--mut);opacity:.45"></i>Gastos de esos proyectos + generales</span></div></div>';
   // agenda next 7 days
   var up=S.agenda.filter(function(a){return !a.hecho&&a.fecha>=t&&a.fecha<=addDays(t,7)}).sort(agSort).slice(0,6);
@@ -805,6 +810,12 @@ function mesesCard(MR){
 }
 function kpi(l,v,s,k){return '<'+(k?'button type="button" data-kpi="'+k+'"':'div')+' class="card kpi'+(k?' kpib':'')+'"><div class="l">'+esc(l)+(k?'<span class="kgo" aria-hidden="true">›</span>':'')+'</div><div class="v">'+v+'</div><div class="s">'+esc(s)+'</div></'+(k?'button':'div')+'>'}
 function emptyBox(t,s,c){return '<div class="empty"><b>'+esc(t)+'</b>'+esc(s)+(c?'<br><button class="btn" data-new="'+c+'">'+ic("plus")+'Agregar '+esc(SCH[c].one)+'</button>':'')+'</div>'}
+function ivaMes(ym){var L=function(a){return (a.fecha||"").slice(0,ym.length)===ym};
+  var cb=S.cobros.filter(L).filter(function(x){return cobIva(x,byId("obras",x.obraId))}),vs=S.ventas.filter(L).filter(function(v){return v.estado!=="Pendiente de pago"}),gs=S.gastos.filter(L).filter(function(x){return x.documento==="Factura"});
+  var dC=sum(cb,function(x){var m=+x.monto||0;return m-Math.round(m/(1+IVA))}),dV=sum(vs,function(v){var m=ventaTotal(v);return m-Math.round(m/(1+IVA))}),cr=sum(gs,gIva);
+  return {cb:cb,vs:vs,gs:gs,debCob:dC,debVen:dV,deb:dC+dV,cred:cr,pagar:dC+dV-cr}}
+function ivaPend(){var L=S.obras.filter(function(o){return o.conIva!=="No"&&obraCalc(o).porCobrar>0});return {obras:L,iva:sum(L,function(o){var p=obraCalc(o).porCobrar;return p-Math.round(p/(1+IVA))})}}
+function ivaCard(mo){var V=ivaMes(mo),P=ivaPend();return '<button class="card ivac" data-kpi="iva"><div class="ch"><h3>IVA '+esc(mesLabel(mo,true).replace(/ de \d{4}$/,""))+' · estimado para el F29</h3><span class="kgo" aria-hidden="true">›</span></div><div class="ivag"><div><span>IVA de ventas</span><b>'+money(V.deb)+'</b></div><div><span>IVA compras (factura)</span><b>− '+money(V.cred)+'</b></div><div class="'+(V.pagar<0?"ok":"")+'"><span>'+(V.pagar<0?"Remanente a favor":"IVA a pagar")+'</span><b>'+money(Math.abs(V.pagar))+'</b></div></div>'+(P.iva?'<div class="mini" style="padding:0 16px 14px">Además, '+money(P.iva)+' de IVA en proyectos aceptados aún por cobrar.</div>':'')+'</button>'}
 function tasaMes(ym){var L=S.cotizaciones.filter(function(c){return (c.fecha||"").slice(0,ym.length)===ym&&c.estado!=="Borrador"});
   var ac=L.filter(function(c){return c.estado==="Aceptada"}),re=L.filter(function(c){return c.estado==="Rechazada"}),en=L.filter(function(c){return c.estado==="Enviada"});
   return {ym:ym,todas:L,ac:ac,re:re,en:en,tasa:(ac.length+re.length)?Math.round(100*ac.length/(ac.length+re.length)):null}}
@@ -1361,7 +1372,7 @@ function detailHTML(c,r){
   if(c==="obras"){var k=obraCalc(r);
     h='<div class="sh"><div><h2>'+esc(r.nombre)+'</h2><div class="mini">'+esc(nameOf("clientes",r.clienteId)||"Sin cliente")+'</div></div><button class="x" data-close="1" aria-label="Cerrar">'+ic("x")+'</button></div>';
     sb='<div class="row-actions">'+pillFor(r.estado)+'<span class="mini">Avance '+(+r.avance||0)+' %</span><span class="bar" style="width:140px"><i style="width:'+Math.min(100,+r.avance||0)+'%"></i></span></div>';
-    sb+='<div class="sum"><div><span>Neto</span><b>'+money(r.neto)+'</b></div><div><span>'+(r.conIva==="No"?"Total (sin IVA)":"Total con IVA")+'</span><b>'+money(k.total)+'</b></div><div><span>Cobrado</span><b>'+money(k.cobrado)+'</b></div><div><span>Por cobrar</span><b style="color:'+(k.porCobrar?"var(--warn)":"var(--ok)")+'">'+money(k.porCobrar)+'</b></div><div><span>Gastos</span><b>'+money(k.gastos)+'</b></div><div><span>Ganancia ('+Math.round(k.margen*100)+' %)</span><b style="color:'+(k.ganancia<0?"var(--bad)":"var(--ok)")+'">'+money(k.ganancia)+'</b></div></div>';
+    sb+='<div class="sum"><div><span>Neto</span><b>'+money(r.neto)+'</b></div><div><span>'+(r.conIva==="No"?"Total (sin IVA)":"Total con IVA")+'</span><b>'+money(k.total)+'</b></div><div><span>Cobrado</span><b>'+money(k.cobrado)+'</b></div><div><span>Por cobrar</span><b style="color:'+(k.porCobrar?"var(--warn)":"var(--ok)")+'">'+money(k.porCobrar)+'</b></div><div><span>Costo neto</span><b>'+money(k.gastos)+'</b></div><div><span>Ganancia neta ('+Math.round(k.margen*100)+' %)</span><b style="color:'+(k.ganancia<0?"var(--bad)":"var(--ok)")+'">'+money(k.ganancia)+'</b></div></div>';
     sb+=topeHTML(r);
     sb+='<dl class="kv">'+kv("Servicio",r.servicio)+kv("Superficie",r.m2?num(r.m2)+" m²":"")+kv("Dirección",[r.direccion,r.comuna].filter(Boolean).join(", "))+kv("Inicio",fdate(r.inicio))+kv("Término",fdate(r.termino))+kv("Garantía",r.garantia?r.garantia+" meses"+(garVence(r)?" · vence "+fdate(garVence(r)):""):"")+kv("Cotización",nameOf("cotizaciones",r.cotizacionId))+kv("Equipo",(r.equipo||[]).map(function(x){return nameOf("equipo",x)}).filter(Boolean).join(", "))+kv("Notas",r.notas)+'</dl>';
     var cb=S.cobros.filter(function(x){return x.obraId===r.id}).sort(function(a,b){return (b.fecha||"").localeCompare(a.fecha||"")});
@@ -1551,7 +1562,7 @@ function xlsxSheet(head,rows,money){var ws=XLSX.utils.aoa_to_sheet([head].concat
   ws["!cols"]=head.map(function(h,i){var w=String(h).length;rows.forEach(function(r){var v=r[i];var l=v==null?0:(typeof v==="number"?12:String(v).length);if(l>w)w=l});return {wch:Math.min(60,Math.max(8,w+2))}});
   ws["!autofilter"]={ref:ws["!ref"]};return ws}
 function obraRow(o){var k=obraCalc(o);return [o.nombre,nameOf("clientes",o.clienteId),nameOf("cotizaciones",o.cotizacionId),o.estado,+o.avance||0,+o.neto||0,o.conIva==="No"?"No":"Sí",k.total,k.cobrado,k.porCobrar,k.gastos,k.ganancia,Math.round(k.margen*1000)/10,o.inicio||"",o.termino||"",[o.direccion,o.comuna].filter(Boolean).join(", "),o.notas||""]}
-var OH=["Proyecto","Cliente","Cotización","Estado","Avance %","Neto","Con IVA","Total a cobrar","Cobrado","Por cobrar","Gastos","Ganancia","Margen %","Inicio","Término","Dirección","Notas"],OM=[5,7,8,9,10,11];
+var OH=["Proyecto","Cliente","Cotización","Estado","Avance %","Neto","Con IVA","Total a cobrar","Cobrado","Por cobrar","Costo neto","Ganancia neta","Margen %","Inicio","Término","Dirección","Notas"],OM=[5,7,8,9,10,11];
 function gastoRows(list){return list.map(function(g){return [g.fecha||"",nameOf("obras",g.obraId),g.categoria||"",g.proveedor||"",g.descripcion||"",g.documento||"",+g.monto||0]})}
 var GH=["Fecha","Proyecto","Categoría","Proveedor","Descripción","Tipo de compra","Monto pagado"];
 function cobroRows(list){return list.map(function(c){return [c.fecha||"",nameOf("obras",c.obraId),c.tipo||"",c.medio||"",c.documento||"",+c.monto||0]})}
@@ -1768,7 +1779,7 @@ function waNum(cliId){var c=byId("clientes",cliId),n="";if(c&&c.telefono){n=Stri
 function saludo(cliId){var c=byId("clientes",cliId);var who=c?String(c.contacto||c.nombre||"").split("·")[0].trim().split(/\s+/)[0]:"";return "Hola"+(who?" "+who:"")}
 function topeHTML(r){var neto=+r.neto||0;if(!neto)return "";var AP=antPct(r),k=obraCalc(r),tope=Math.round(neto*AP/100),g=k.gastos,p=g/neto,over=g>tope,cls=g>neto?"bad":over?"warn":"ok";
   var msg=over?"Superaste el "+AP+" % por "+money(g-tope)+". La ganancia baja a "+Math.round((1-p)*100)+" % del neto ("+money(neto-g)+").":"Quedan "+money(tope-g)+" dentro del "+AP+" %. Ganancia proyectada: "+Math.round((1-p)*100)+" % del neto ("+money(neto-g)+").";
-  return '<div class="tope '+cls+'"><div class="tt"><b>Gastos '+money(g)+' con IVA · '+Math.round(p*100)+' % del neto</b><span>Tope '+AP+' % (anticipo de materialidad): '+money(tope)+'</span></div><span class="tbar"><i style="width:'+Math.min(100,tope?g/tope*100:0)+'%"></i></span><div class="mini">'+msg+'</div></div>'}
+  return '<div class="tope '+cls+'"><div class="tt"><b>Costo '+money(g)+' neto · '+Math.round(p*100)+' % del valor neto</b><span>Tope '+AP+' % (anticipo de materialidad): '+money(tope)+'</span></div><span class="tbar"><i style="width:'+Math.min(100,tope?g/tope*100:0)+'%"></i></span><div class="mini">'+msg+'</div></div>'}
 function pctTxt(p){return String(Math.round(p*10)/10).replace(".",",")+" %"}
 function cobroDef(r){var k=obraCalc(r),neto=+r.neto||0,pn=Math.max(0,neto-k.cobradoNeto),first=!k.cobrado&&r.estado!=="Terminada";
   return {tipo:first?"Anticipo":"Saldo final",pct:first?antPct(r):(neto?Math.round(pn/neto*1000)/10:0),iva:r.conIva!=="No"}}
@@ -1937,6 +1948,14 @@ function kpiOpen(k,arg){var t=today(),mo=t.slice(0,7),h="",title="",sub="";
   else if(k==="cobrar"){var pr=function(o,extra){var c=obraCalc(o);return '<button class="it" data-open="obras" data-id="'+o.id+'"><span class="t">'+esc(o.nombre)+'</span><span class="m">'+esc([nameOf("clientes",o.clienteId),o.estado,"Total "+money(c.total)+" · pagado "+money(c.cobrado)].filter(Boolean).join(" · "))+'</span><span class="r"><span class="amt">'+money(c.porCobrar)+'</span>'+(extra||'')+'</span></button>'};
     var te=S.obras.filter(function(o){return o.estado==="Terminada"&&obraCalc(o).porCobrar>0}),cu=S.obras.filter(function(o){return o.estado!=="Terminada"&&obraCalc(o).cobrado>0&&obraCalc(o).porCobrar>0}),sa=S.obras.filter(function(o){return o.estado!=="Terminada"&&!obraCalc(o).cobrado});
     title="Por cobrar";sub="Con IVA · toca un proyecto para cobrar por WhatsApp";h=blk("Proyectos terminados sin pagar",te.map(function(o){return pr(o,'<span class="pill bad">Cobrar</span>')}),"Todos los proyectos terminados están pagados.",money(sum(te,function(o){return obraCalc(o).porCobrar})))+blk("En curso: saldo al terminar (40 %)",cu.map(function(o){return pr(o)}),"Sin saldos de proyectos en curso.",cu.length?money(sum(cu,function(o){return obraCalc(o).porCobrar})):null)+blk("Sin anticipo registrado",sa.map(function(o){return pr(o,'<span class="pill warn">Anticipo</span>')}),"Todos los proyectos en curso tienen anticipo registrado.",null)}
+  else if(k==="iva"){var V=ivaMes(mo),P=ivaPend();title="IVA de "+mesLabel(mo,true).replace(/ de \d{4}$/,"");sub="Estimado para el F29 · según fecha de cada cobro, venta y compra";
+    function ivr(t,sub2,amt,open){return '<button class="it"'+(open?' data-open="'+open[0]+'" data-id="'+open[1]+'"':'')+'><span class="t">'+esc(t)+'</span><span class="m">'+esc(sub2)+'</span><span class="r"><span class="amt">'+money(amt)+'</span></span></button>'}
+    h='<div class="sum"><div><span>IVA de ventas</span><b>'+money(V.deb)+'</b></div><div><span>IVA compras con factura</span><b>− '+money(V.cred)+'</b></div><div><span>'+(V.pagar<0?"Remanente a favor":"IVA a pagar")+'</span><b>'+money(Math.abs(V.pagar))+'</b></div></div>';
+    h+=blk("Cobros de proyectos con IVA ("+V.cb.length+")",V.cb.map(function(x){var m=+x.monto||0;return ivr(nameOf("obras",x.obraId)||"Proyecto",fdate(x.fecha)+" · "+(x.tipo||"Cobro")+" · "+money(m)+" con IVA",m-Math.round(m/(1+IVA)),["obras",x.obraId])}),"Sin cobros con IVA este mes.",V.debCob?money(V.debCob):null);
+    if(V.vs.length)h+=blk("Ventas Acrimper ("+V.vs.length+")",V.vs.map(function(v){var m=ventaTotal(v);return ivr(v.comprador||"Venta",fdate(v.fecha)+" · "+(v.documento||"")+" · "+money(m),m-Math.round(m/(1+IVA)),["ventas",v.id])}),"",money(V.debVen));
+    h+=blk("Compras con factura ("+V.gs.length+")",V.gs.map(function(x){return ivr(x.proveedor||x.descripcion||x.categoria||"Compra",fdate(x.fecha)+" · "+money(x.monto)+" con IVA"+(x.obraId?" · "+nameOf("obras",x.obraId):""),gIva(x),["gastos",x.id])}),"Sin compras con factura este mes. Marca “Factura” al registrar un gasto para descontar su IVA.",V.cred?money(V.cred):null);
+    if(P.obras.length)h+=blk("IVA por cobrar en proyectos aceptados",P.obras.map(function(o){var p=obraCalc(o).porCobrar;return ivr(o.nombre,"Pendiente "+money(p)+" con IVA · "+o.estado,p-Math.round(p/(1+IVA)),["obras",o.id])}),"",money(P.iva));
+    h+='<p class="mini">Proyectos sin IVA no suman IVA. Las compras con boleta o sin IVA no descuentan IVA; cuentan completas como costo. Es una estimación: el F29 lo confirma tu contador con las facturas emitidas y recibidas.</p>'}
   else if(k==="ganancia"){var MR=mesesRes(),RM=MR[mo]||{obras:[],ant:0,fin:0,gastos:0,gastosGen:0,ganancia:0};
     title="Ganancia de "+mesLabel(mo,true).replace(/ de \d{4}$/,"");sub="Lo pagado sin IVA, menos los gastos con IVA";
     h=blk("Proyectos terminados este mes",RM.obras.map(function(o){var cj=obraCaja(o);return '<button class="it" data-open="obras" data-id="'+o.id+'"><span class="t">'+esc(o.nombre)+'</span><span class="m">Anticipo '+money(cj.ant)+' − gastos '+money(cj.gastos)+' + pago final '+money(cj.fin)+'</span><span class="r"><span class="amt" style="color:'+(cj.ganancia<0?"var(--bad)":"var(--ok)")+'">'+money(cj.ganancia)+'</span></span></button>'}),"Aún no terminas proyectos este mes.",null);
