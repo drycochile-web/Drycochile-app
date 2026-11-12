@@ -507,7 +507,7 @@ var I={
  plus:'<path d="M12 5v14M5 12h14"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',
  search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',check:'<path d="m5 12 5 5 9-10"/>',
  dots:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
- dl:'<path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/>',edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',pdf:'<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M9.5 17v-4h1.2a1.2 1.2 0 0 1 0 2.4H9.5M13.5 17v-4h.8a1.6 1.6 0 0 1 1.6 1.6v.8a1.6 1.6 0 0 1-1.6 1.6z"/>',serv:'<path d="M12 3c3.4 4 6 7.4 6 10.4a6 6 0 0 1-12 0C6 10.4 8.6 7 12 3z"/><path d="M9.5 14a2.5 2.5 0 0 0 2.5 2.5"/>',eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',wa:'<path d="M4 20l1.3-4A8 8 0 1 1 8 18.7z"/><path d="M9 9.5c.3 2 2.3 4.3 4.5 4.8l1.2-1.1 1.8.9c-.3 1.2-1.3 1.9-2.5 1.7-3.2-.5-5.8-3.1-6.3-6.3-.2-1.2.5-2.2 1.7-2.5l.9 1.8z"/>',copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>'
+ dl:'<path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/>',edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',pdf:'<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M9.5 17v-4h1.2a1.2 1.2 0 0 1 0 2.4H9.5M13.5 17v-4h.8a1.6 1.6 0 0 1 1.6 1.6v.8a1.6 1.6 0 0 1-1.6 1.6z"/>',serv:'<path d="M12 3c3.4 4 6 7.4 6 10.4a6 6 0 0 1-12 0C6 10.4 8.6 7 12 3z"/><path d="M9.5 14a2.5 2.5 0 0 0 2.5 2.5"/>',eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',wa:'<path d="M4 20l1.3-4A8 8 0 1 1 8 18.7z"/><path d="M9 9.5c.3 2 2.3 4.3 4.5 4.8l1.2-1.1 1.8.9c-.3 1.2-1.3 1.9-2.5 1.7-3.2-.5-5.8-3.1-6.3-6.3-.2-1.2.5-2.2 1.7-2.5l.9 1.8z"/>',shareapp:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/>',copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>'
 };
 function ic(n){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+I[n]+'</svg>'}
 
@@ -730,7 +730,7 @@ var route="panel",q="",flt="Todos",agMode="proximos";
 function go(){var h=(location.hash||"").replace("#","");route=(NAV.some(function(n){return n[0]===h})||h==="plantillas")?h:"panel";q="";flt="Todos";closeMore();render();window.scrollTo(0,0)}
 window.addEventListener("hashchange",go);
 
-function navHTML(){return NAV.filter(function(n){return !window.__can||window.__can(n[0])}).map(function(n){var ct="";if(n[0]==="cotizaciones"){var k=S.cotizaciones.filter(function(x){return x.estado==="Enviada"}).length;if(k)ct='<span class="ct">'+k+'</span>'}if(n[0]==="obras"){var k2=S.obras.filter(function(x){return x.estado==="En curso"}).length;if(k2)ct='<span class="ct">'+k2+'</span>'}return '<a href="#'+n[0]+'" class="'+(route===n[0]?"on":"")+'">'+ic(n[2])+n[1]+ct+'</a>'}).join("")}
+function navHTML(){return NAV.filter(function(n){return !window.__can||window.__can(n[0])}).map(function(n){var ct="";if(n[0]==="cotizaciones"){var k=S.cotizaciones.filter(function(x){return x.estado==="Enviada"}).length;if(k)ct='<span class="ct">'+k+'</span>'}if(n[0]==="obras"){var k2=S.obras.filter(function(x){return x.estado==="En curso"}).length;if(k2)ct='<span class="ct">'+k2+'</span>'}return '<a href="#'+n[0]+'" class="'+(route===n[0]?"on":"")+'">'+ic(n[2])+n[1]+ct+'</a>'}).join("")+'<a href="#" data-shareapp="1">'+ic("shareapp")+'Compartir app</a>'}
 function tabHTML(){var inMore=!TABS.some(function(t){return t[0]===route});return TABS.filter(function(t){return !window.__can||window.__can(t[0])}).map(function(t){return '<a href="#'+t[0]+'" class="'+(route===t[0]?"on":"")+'">'+ic(t[2])+t[1]+'</a>'}).join("")+'<button type="button" data-act="more" class="'+(inMore?"on":"")+'">'+ic("dots")+'Más</button>'}
 
 function render(){if(window.__can&&!window.__can(route))route=window.__home();
@@ -1554,7 +1554,7 @@ function csv(c){if(!downloads)return;var s=SCH[c];var cols=s.fields.filter(funct
 }
 
 /* ---------- more menu ---------- */
-function openMore(){var L=document.createElement("div");L.className="more";L.id="moremenu";L.innerHTML='<div class="pn">'+NAV.filter(function(n){return (!window.__can||window.__can(n[0]))&&!TABS.some(function(t){return t[0]===n[0]})}).map(function(n){return '<a href="#'+n[0]+'">'+ic(n[2])+n[1]+'</a>'}).join("")+'</div>';L.addEventListener("click",function(e){if(e.target===L)closeMore()});document.body.appendChild(L)}
+function openMore(){var L=document.createElement("div");L.className="more";L.id="moremenu";L.innerHTML='<div class="pn">'+NAV.filter(function(n){return (!window.__can||window.__can(n[0]))&&!TABS.some(function(t){return t[0]===n[0]})}).map(function(n){return '<a href="#'+n[0]+'">'+ic(n[2])+n[1]+'</a>'}).join("")+'<a href="#" data-shareapp="1">'+ic("shareapp")+'Compartir app</a></div>';L.addEventListener("click",function(e){if(e.target===L)closeMore()});document.body.appendChild(L)}
 function closeMore(){var m=document.getElementById("moremenu");if(m)m.remove()}
 
 /* ---------- firma de Nicolás (imagen privada en Drive) ---------- */
@@ -1967,6 +1967,23 @@ document.addEventListener("change",function(e){if(!ACQ||!e.target.closest("#acrw
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&ACQ)acrClose()});
 
 document.addEventListener("change",function(e){var t=e.target.closest("[data-acrcli]");if(!t||!sheetState)return;sheetState.cli=t.value;renderSheet()});
+
+/* ---------- compartir la aplicación ---------- */
+var APP_URL="https://app.drycochile.cl";
+function appShareText(){return "Te comparto la app de Dryco Chile:\n"+APP_URL+"\n\nPara instalarla en el teléfono: ábrela en Chrome (Android) o Safari (iPhone) y elige «Agregar a pantalla de inicio». Para entrar necesitas la clave que te entrega Nicolás."}
+function appShareOpen(){closeMore();var L=document.createElement("div");L.id="appsh";L.className="actaw";L.style.alignItems="center";L.style.justifyContent="center";
+  var t=appShareText();
+  L.innerHTML='<div class="aw" style="height:auto;margin:auto;border-radius:16px;max-width:440px"><div class="sh"><div><h2>Compartir la app</h2><div class="mini">Para que tu equipo la instale en su teléfono</div></div><button class="x" data-appshx="1" aria-label="Cerrar">'+ic("x")+'</button></div>'+
+   '<div class="sb" style="align-items:center;text-align:center"><div id="appqr" style="width:200px;height:200px;margin:4px auto;background:#fff;border-radius:12px;padding:10px"></div><p class="mini" style="margin:0">Escanea el código con la cámara del teléfono</p>'+
+   '<div class="linkbox" style="width:100%"><code>'+esc(APP_URL)+'</code><button class="btn" data-appshcopy="1">'+ic("copy")+'Copiar</button></div>'+
+   '<p class="mini" style="margin:0;text-align:left">Cada persona entra con su propia clave. '+(!window.__ROLE||window.__ROLE==="Administrador"?'Créala en <a href="#usuarios" data-appshx="1">Usuarios</a> y elige qué puede ver.':'Pídesela a Nicolás.')+'</p></div>'+
+   '<div class="sf"><a class="btn" href="https://wa.me/?text='+encodeURIComponent(t)+'" target="_blank" rel="noopener">'+ic("wa")+'WhatsApp</a><button class="btn pri" data-appshgo="1">'+ic("shareapp")+'Compartir</button></div></div>';
+  document.body.appendChild(L);drawQR("appqr",APP_URL);var q=document.getElementById("appqr");if(q&&q.hidden&&q.nextElementSibling)q.nextElementSibling.hidden=true}
+document.addEventListener("click",function(e){var t=e.target.closest("[data-shareapp],[data-appshx],[data-appshcopy],[data-appshgo]");if(!t)return;
+  if(t.dataset.shareapp){e.preventDefault();appShareOpen();return}
+  if(t.dataset.appshcopy){var tx=appShareText();if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(tx).then(function(){toast("Enlace e instrucciones copiados")},function(){toast(APP_URL)});else toast(APP_URL);return}
+  if(t.dataset.appshgo){if(navigator.share)navigator.share({title:"App Dryco Chile",text:appShareText()}).catch(function(){});else{window.open("https://wa.me/?text="+encodeURIComponent(appShareText()),"_blank")}return}
+  if(t.dataset.appshx){var L=document.getElementById("appsh");if(L)L.remove()}});
 /* ---------- events ---------- */
 document.addEventListener("click",function(e){
   var t=e.target.closest("[data-pstk],[data-xlsx],[data-czsave],[data-czmk],[data-act],[data-new],[data-open],[data-close],[data-f],[data-ag],[data-done],[data-stk],[data-csv],[data-copy],[data-edit],[data-del],[data-delyes],[data-delno],[data-submit],[data-setest],[data-mkobra],[data-svcopy],[data-svshow],[data-presx],[data-svfor],[data-svpdf],[data-cotdl],[data-cotedit],[data-qpgo],[data-qpx],[data-qpadd],[data-scrim]");
