@@ -45,7 +45,7 @@ function maybeImport(){if(IMPDONE||!USER||USER.rol!=="Administrador")return;IMPD
     var j=JSON.parse(decodeURIComponent(escape(atob(b64))));
     var hechos=(DATA.importaciones||[]).map(function(x){return x.id});
     if(!j.lote||hechos.indexOf(j.lote)>=0)return;
-    var p=Promise.resolve();(j.docs||[]).forEach(function(d){p=p.then(function(){return run("put",TOK,d.c,d.id,JSON.stringify(d.data),!!d.merge)})});
+    var p=Promise.resolve();(j.docs||[]).forEach(function(d){p=p.then(function(){return d.del?run("del",TOK,d.c,d.id):run("put",TOK,d.c,d.id,JSON.stringify(d.data),!!d.merge)})});
     return p.then(function(){return run("put",TOK,"importaciones",j.lote,JSON.stringify({fecha:Date.now(),docs:(j.docs||[]).length,detalle:j.detalle||""}),false)})
       .then(function(){return load()}).then(function(){try{var t=document.createElement("div");t.textContent="Datos agregados: "+(j.detalle||j.lote);t.style.cssText="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));background:#0B1630;color:#fff;padding:10px 16px;border-radius:12px;z-index:150;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)";document.body.appendChild(t);setTimeout(function(){t.remove()},6000)}catch(e){}})
   }).catch(function(e){IMPDONE=false;console.warn("importar",e)})}
@@ -71,6 +71,8 @@ var downloads={save:function(o){var blob=o.data instanceof Blob?o.data:new Blob(
   return b64(blob).then(function(d){return run("saveFile",TOK,o.filename,d,blob.type||"application/octet-stream")}).then(function(url){
     bar('<span>Guardado en tu Drive</span><a href="'+esc(url)+'" target="_blank" rel="noopener">Abrir</a><button data-x="1" aria-label="Cerrar">×</button>');return true},
     function(e){bar('<span>No se pudo guardar el archivo en Drive.</span><button data-x="1">×</button>');throw e})}};
+window.__saveDriveOnly=function(bytes,name){var blob=new Blob([bytes],{type:"application/pdf"});bar('<span>Guardando copia en tu Drive…</span>');
+  return b64(blob).then(function(d){return run("saveFile",TOK,name,d,"application/pdf")}).then(function(url){bar('<span>Copia guardada en tu Drive</span><a href="'+esc(url)+'" target="_blank" rel="noopener">Abrir</a><button data-x="1" aria-label="Cerrar">×</button>')},function(){bar('<span>No se pudo guardar la copia en Drive.</span><button data-x="1">×</button>')})};
 /* imágenes de las fichas */
 window.__imgBytes=function(p){if(!IMGP[p])IMGP[p]=run("img",TOK,String(p).split("/").pop()).then(function(s){if(!s)throw 0;IMGU[p]="data:image/jpeg;base64,"+s;var bin=atob(s),u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u});return IMGP[p]};
 function fillImgs(){[].forEach.call(document.querySelectorAll("img[data-src]"),function(im){var p=im.getAttribute("data-src");if(im.dataset.done===p)return;im.dataset.done=p;
@@ -416,6 +418,31 @@ a.btn{text-decoration:none;color:var(--ink)}a.btn.pri{color:#fff}
 .more a{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 6px;border-radius:12px;background:var(--surface2);text-decoration:none;color:var(--ink);font-weight:600;font-size:13px}
 .more svg{width:22px;height:22px;color:var(--accent)}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:in .22s ease-out}@keyframes in{from{transform:translateX(24px);opacity:.6}}}
+.actaw{position:fixed;inset:0;z-index:70;background:rgba(8,15,30,.55);display:flex;justify-content:flex-end}
+.actaw .aw{background:var(--surface);width:min(640px,100%);height:100%;overflow:auto;display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(0,0,0,.2)}
+.actaw .sh{position:sticky;top:0;background:var(--surface);z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.actaw .sh h2{margin:0;font-family:var(--fd);font-size:19px}
+.actaw .sb{padding:16px 18px;display:flex;flex-direction:column;gap:16px;flex:1}
+.actaw .sf{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.actaw .form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.actaw .form{grid-template-columns:1fr}.actaw .sf .btn{flex:1;justify-content:center}}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media (max-width:560px){.seg{grid-template-columns:1fr}}
+.seg label{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;background:var(--surface2)}
+.seg label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.seg input{margin-top:3px;accent-color:var(--accent)}.seg b{display:block;font-size:14px}.seg small{display:block;color:var(--mut);font-size:12.5px;margin-top:2px}
+.afotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.afotos figure{margin:0;position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface2)}
+.afotos img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
+.afotos select{width:100%;border:0;border-top:1px solid var(--line);padding:7px 8px;background:var(--surface);font-size:13px}
+.afotos figure .btn{position:absolute;top:6px;right:6px;padding:4px;border-radius:999px;background:rgba(255,255,255,.92)}
+.afadd{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1.5px dashed var(--line);border-radius:12px;min-height:118px;color:var(--accent);font-weight:600;font-size:13px;cursor:pointer;background:var(--surface2)}
+.afadd svg{width:22px;height:22px}
+.firma{position:relative;border:1.5px dashed var(--line);border-radius:12px;background:#fff;height:150px}
+.firma canvas{width:100%;height:100%;display:block;touch-action:none;border-radius:12px}
+.firma .firmah{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;pointer-events:none;max-width:none;color:#8A97A8}
+.firma.ok .firmah{display:none}
+.adet{border:1px solid var(--line);border-radius:12px;padding:10px 12px}.adet summary{cursor:pointer;font-weight:600;font-size:14px}.adet .fld{margin-top:10px}.adet textarea{min-height:190px}
+.gar .it .r .pill{white-space:nowrap}
 </style>
 
 <div class="app">
@@ -713,6 +740,8 @@ function vPanel(){
   h+='<div class="card"><div class="ch"><h3>Cotizaciones por seguir</h3><span class="mini">'+S.cotizaciones.filter(function(c){return c.estado==="Enviada"}).length+' enviadas</span></div>'+(seg.length?'<div class="list">'+seg.map(function(c){var late=c.seguimiento&&c.seguimiento<=t;return '<button class="it" data-open="cotizaciones" data-id="'+c.id+'"><span class="t">COT '+esc(c.numero)+' · '+esc(nameOf("clientes",c.clienteId)||"Sin cliente")+'</span><span class="m">'+(c.seguimiento?(late?"Seguimiento pendiente desde ":"Seguimiento ")+esc(fdate(c.seguimiento)):"Enviada el "+esc(fdate(c.fecha)))+'</span><span class="r"><span class="amt">'+money(c.neto)+'</span>'+(late?'<span class="pill warn">Llamar</span>':'')+'</span></button>'}).join("")+'</div>':emptyBox("Todo al día","No hay cotizaciones esperando respuesta.","cotizaciones"))+'</div>';
   h+='<div class="card"><div class="ch"><h3>Materiales</h3><a class="mini" href="#materiales">Inventario</a></div>'+(low.length?'<div class="list">'+low.map(function(m){return '<button class="it" data-open="materiales" data-id="'+m.id+'"><span class="t">'+esc(m.nombre)+'</span><span class="m">'+esc(m.marca||"")+'</span><span class="r"><span class="pill bad">'+num(m.stock)+' '+esc(m.unidad||"")+'</span><span class="sub">mín. '+num(m.minimo)+'</span></span></button>'}).join("")+'</div>':'<div class="cb mini">'+(S.materiales.length?"Ningún material bajo el stock mínimo. Gastos del mes: <b>"+money(gasMes)+"</b>.":"Registra tus productos y su stock mínimo para recibir avisos.")+'</div>')+'</div>';
   h+='</div>';
+  var GV=S.obras.filter(function(o){return o.estado==="Terminada"&&garVence(o)}).map(function(o){return {o:o,v:garVence(o)}}).filter(function(x){return x.v>=addDays(t,-30)&&x.v<=addDays(t,90)}).sort(function(a,b){return a.v.localeCompare(b.v)});
+  if(GV.length)h+='<div class="card gar"><div class="ch"><h3>Garantías por vencer</h3><span class="mini">Ofrece una mantención antes del vencimiento</span></div><div class="list">'+GV.slice(0,8).map(function(x){var o=x.o,d=Math.round((pdate(x.v)-pdate(t))/864e5);return '<button class="it" data-open="obras" data-id="'+o.id+'"><span class="t">'+esc(o.nombre)+'</span><span class="m">'+esc(nameOf("clientes",o.clienteId)||"")+' · vence '+esc(fdate(x.v))+'</span><span class="r"><span class="pill '+(d<0?"bad":d<=30?"warn":"acc")+'">'+(d<0?"Vencida hace "+(-d)+" d":d===0?"Vence hoy":"Faltan "+d+" d")+'</span></span></button>'}).join("")+'</div></div>';
   h+=mesesCard(MR);
   return h;
 }
@@ -1164,8 +1193,8 @@ function renderSheet(){
     var v=Object.assign({},rec||{});
     if(!rec){s.fields.forEach(function(f){if(f.d!==undefined)v[f.k]=f.d==="today"?today():f.d});if(st.c==="cotizaciones")v.numero=nextCot();if(st.preset)Object.assign(v,st.preset)}
     var fem={cotizaciones:1,obras:1,agenda:1,equipo:1};html+='<div class="sh"><h2>'+(rec?"Editar "+esc(s.one):(fem[st.c]?"Nueva ":"Nuevo ")+esc(s.one))+'</h2><button class="x" data-close="1" aria-label="Cerrar">'+ic("x")+'</button></div>';
-    html+='<form id="frm" class="sb" novalidate><div class="form">'+s.fields.map(function(f){return field(f,v[f.k])}).join("")+'</div>'+(st.c==="cotizaciones"?'<div class="mini" id="ivaHint"></div>':'')+(rec&&st.confirm?confirmBox():"")+'</form>';
-    html+='<div class="sf">'+(rec?'<button class="btn bad" data-del="1" style="margin-right:auto">Eliminar</button>':'')+'<button class="btn" data-close="1">Cancelar</button><button class="btn pri" data-submit="1">'+(rec?"Guardar cambios":"Guardar")+'</button></div>';
+    html+='<form id="frm" class="sb" novalidate><div class="form">'+s.fields.map(function(f){return field(f,v[f.k])}).join("")+'</div>'+(st.c==="cotizaciones"?'<div class="mini" id="ivaHint"></div>':'')+'</form>';
+    html+='<div class="sf">'+(rec&&st.confirm?confirmBox():(rec?'<button class="btn bad" data-del="1" style="margin-right:auto">Eliminar</button>':'')+'<button class="btn" data-close="1">Cancelar</button><button class="btn pri" data-submit="1">'+(rec?"Guardar cambios":"Guardar")+'</button>')+'</div>';
   }else{
     html+=detailHTML(st.c,rec);
   }
@@ -1211,9 +1240,10 @@ function detailHTML(c,r){
     h='<div class="sh"><div><h2>'+esc(r.nombre)+'</h2><div class="mini">'+esc(nameOf("clientes",r.clienteId)||"Sin cliente")+'</div></div><button class="x" data-close="1" aria-label="Cerrar">'+ic("x")+'</button></div>';
     sb='<div class="row-actions">'+pillFor(r.estado)+'<span class="mini">Avance '+(+r.avance||0)+' %</span><span class="bar" style="width:140px"><i style="width:'+Math.min(100,+r.avance||0)+'%"></i></span></div>';
     sb+='<div class="sum"><div><span>Neto</span><b>'+money(r.neto)+'</b></div><div><span>'+(r.conIva==="No"?"Total (sin IVA)":"Total con IVA")+'</span><b>'+money(k.total)+'</b></div><div><span>Cobrado</span><b>'+money(k.cobrado)+'</b></div><div><span>Por cobrar</span><b style="color:'+(k.porCobrar?"var(--warn)":"var(--ok)")+'">'+money(k.porCobrar)+'</b></div><div><span>Gastos</span><b>'+money(k.gastos)+'</b></div><div><span>Ganancia ('+Math.round(k.margen*100)+' %)</span><b style="color:'+(k.ganancia<0?"var(--bad)":"var(--ok)")+'">'+money(k.ganancia)+'</b></div></div>';
-    sb+='<dl class="kv">'+kv("Servicio",r.servicio)+kv("Superficie",r.m2?num(r.m2)+" m²":"")+kv("Dirección",[r.direccion,r.comuna].filter(Boolean).join(", "))+kv("Inicio",fdate(r.inicio))+kv("Término",fdate(r.termino))+kv("Garantía",r.garantia?r.garantia+" meses"+(r.termino?" · vence "+fdate(addMonths(r.termino,r.garantia)):""):"")+kv("Cotización",nameOf("cotizaciones",r.cotizacionId))+kv("Equipo",(r.equipo||[]).map(function(x){return nameOf("equipo",x)}).filter(Boolean).join(", "))+kv("Notas",r.notas)+'</dl>';
+    sb+='<dl class="kv">'+kv("Servicio",r.servicio)+kv("Superficie",r.m2?num(r.m2)+" m²":"")+kv("Dirección",[r.direccion,r.comuna].filter(Boolean).join(", "))+kv("Inicio",fdate(r.inicio))+kv("Término",fdate(r.termino))+kv("Garantía",r.garantia?r.garantia+" meses"+(garVence(r)?" · vence "+fdate(garVence(r)):""):"")+kv("Cotización",nameOf("cotizaciones",r.cotizacionId))+kv("Equipo",(r.equipo||[]).map(function(x){return nameOf("equipo",x)}).filter(Boolean).join(", "))+kv("Notas",r.notas)+'</dl>';
     var cb=S.cobros.filter(function(x){return x.obraId===r.id}).sort(function(a,b){return (b.fecha||"").localeCompare(a.fecha||"")});
     var gs=S.gastos.filter(function(x){return x.obraId===r.id}).sort(function(a,b){return (b.fecha||"").localeCompare(a.fecha||"")});
+    sb+='<div class="sec">Entrega y garantía <button class="btn pri" data-acta="'+r.id+'">'+ic("pdf")+'Acta y garantía</button></div><div class="mini" style="max-width:none">'+(r.actaFecha?(r.actaTipo==="garantia"?"Certificado de garantía":"Acta de entrega y certificado de garantía")+" emitido el "+esc(fdate(r.actaFecha))+(garVence(r)?" · garantía vigente hasta el "+esc(fdate(garVence(r))):""):"Genera el acta de entrega con fotos y firma del cliente, o solo el certificado de garantía.")+'</div>';
     sb+='<div class="sec">Cobros <button class="btn" data-new="cobros" data-preset-obra="'+r.id+'">'+ic("plus")+'Registrar cobro</button></div>'+(cb.length?'<div class="sublist list">'+cb.map(function(x){return rowHTML("cobros",x)}).join("")+'</div>':'<div class="mini">Sin cobros registrados.</div>');
     sb+='<div class="sec">Gastos de la obra <button class="btn" data-new="gastos" data-preset-obra="'+r.id+'">'+ic("plus")+'Registrar gasto</button></div>'+(gs.length?'<div class="sublist list">'+gs.map(function(x){return rowHTML("gastos",x)}).join("")+'</div>':'<div class="mini">Sin gastos registrados.</div>');
   }else if(c==="cotizaciones"){
@@ -1418,6 +1448,120 @@ function csv(c){if(!downloads)return;var s=SCH[c];var cols=s.fields.filter(funct
 /* ---------- more menu ---------- */
 function openMore(){var L=document.createElement("div");L.className="more";L.id="moremenu";L.innerHTML='<div class="pn">'+NAV.filter(function(n){return (!window.__can||window.__can(n[0]))&&!TABS.some(function(t){return t[0]===n[0]})}).map(function(n){return '<a href="#'+n[0]+'">'+ic(n[2])+n[1]+'</a>'}).join("")+'</div>';L.addEventListener("click",function(e){if(e.target===L)closeMore()});document.body.appendChild(L)}
 function closeMore(){var m=document.getElementById("moremenu");if(m)m.remove()}
+
+/* ---------- acta de entrega y certificado de garantía ---------- */
+var GAR_COND="La garantía cubre filtraciones a través de las superficies tratadas que se deban a defectos de los materiales o de su aplicación. En ese caso, Dryco Chile repara sin costo los materiales y la mano de obra.\nNo cubre catástrofes intencionales, naturales o de causa desconocida; daños causados por terceros o por intervenciones posteriores sobre las superficies tratadas (perforaciones, instalaciones, cambios de pavimento); movimientos estructurales mayores; uso distinto al previsto ni sectores no incluidos en el trabajo descrito.\nPara hacerla efectiva, el cliente debe avisar por escrito a contacto@drycochile.cl apenas detecte el problema, presentar este certificado y permitir una visita técnica de diagnóstico.\nSe recomienda una revisión preventiva anual de las superficies tratadas para mantener el sistema en óptimas condiciones.";
+var ACTA=null;
+function actaLongDate(s){var d=pdate(s);return d?d.toLocaleDateString("es-CL",{day:"numeric",month:"long",year:"numeric"}):""}
+function garDesde(o){return o.garantiaDesde||o.termino||""}
+function garVence(o){var d=garDesde(o);return d&&+o.garantia?addMonths(d,o.garantia):""}
+function actaOpen(obraId){var o=byId("obras",obraId);if(!o)return;var cli=byId("clientes",o.clienteId)||{},cot=byId("cotizaciones",o.cotizacionId)||{};
+  ACTA={obraId:obraId,tipo:"acta",fecha:o.garantiaDesde||o.termino||today(),meses:+o.garantia||24,m2:o.m2||cot.m2||"",
+    trabajo:cot.descripcion||((o.servicio?o.servicio+": ":"")+(o.nombre||"")),sistema:o.sistemaAplicado||"",recibe:cli.contacto&&cli.tipo==="Comunidad"?cli.contacto:(cli.nombre||""),rut:cli.rut||"",
+    obs:"",cond:GAR_COND,fotos:[],firma:null};
+  actaRender()}
+function actaClose(){var L=document.getElementById("actaw");if(L)L.remove();ACTA=null}
+function actaRead(){var L=document.getElementById("actaw");if(!L||!ACTA)return;["fecha","meses","m2","trabajo","sistema","recibe","rut","obs","cond"].forEach(function(k){var el=L.querySelector("#acta_"+k);if(el)ACTA[k]=el.value});
+  var t=L.querySelector('input[name="acta_tipo"]:checked');if(t)ACTA.tipo=t.value;
+  [].slice.call(L.querySelectorAll("[data-fotopie]")).forEach(function(el){var f=ACTA.fotos[+el.dataset.fotopie];if(f)f.pie=el.value})}
+function actaRender(){var o=byId("obras",ACTA.obraId)||{},L=document.getElementById("actaw"),st=L?L.querySelector(".aw").scrollTop:0;
+  if(!L){L=document.createElement("div");L.id="actaw";L.className="actaw";L.setAttribute("role","dialog");L.setAttribute("aria-modal","true");document.body.appendChild(L)}
+  var full=ACTA.tipo==="acta",vence=ACTA.fecha&&+ACTA.meses?addMonths(ACTA.fecha,ACTA.meses):"";
+  function fld(k,l,type,extra,hint){var v=ACTA[k]==null?"":ACTA[k];return '<div class="fld'+(type==="area"?" full":"")+'"><label for="acta_'+k+'">'+l+'</label>'+(type==="area"?'<textarea id="acta_'+k+'"'+(extra||"")+'>'+esc(v)+'</textarea>':'<input id="acta_'+k+'" type="'+type+'" value="'+esc(v)+'"'+(extra||"")+'>')+(hint?'<span class="hint">'+hint+'</span>':'')+'</div>'}
+  var h='<div class="aw"><div class="sh"><div><h2>Entrega y garantía</h2><div class="mini">'+esc(o.nombre||"")+' · '+esc(nameOf("clientes",o.clienteId)||"Sin cliente")+'</div></div><button class="x" data-actax="1" aria-label="Cerrar">'+ic("x")+'</button></div><div class="sb">';
+  h+='<div class="seg" role="radiogroup" aria-label="Documento"><label><input type="radio" name="acta_tipo" value="acta"'+(full?" checked":"")+'><span><b>Acta de entrega + certificado de garantía</b><small>Con registro fotográfico (opcional) y firma del cliente</small></span></label><label><input type="radio" name="acta_tipo" value="garantia"'+(!full?" checked":"")+'><span><b>Solo certificado de garantía</b><small>Una carta de garantía, sin fotos ni firma del cliente</small></span></label></div>';
+  h+='<div class="form">'+fld("fecha","Fecha de entrega","date")+fld("meses","Garantía (meses)","number",' min="1" max="240" inputmode="numeric"',vence?"Vigente hasta el "+esc(actaLongDate(vence)):"")+fld("m2","Superficie (m²)","number",' inputmode="decimal"')+fld("recibe",full?"Recibe conforme":"Titular de la garantía","text")+fld("rut","RUT (opcional)","text")+
+     fld("trabajo","Trabajo realizado","area")+fld("sistema","Sistema y productos aplicados","area",' placeholder="Ej: imprimante epóxico base agua, membrana de poliuretano en 2 capas cruzadas y terminación alifática UV"')+(full?fld("obs","Observaciones de la entrega (opcional)","area",' placeholder="Ej: se entregan las superficies limpias; sin tránsito por 48 horas"'):"")+'</div>';
+  if(full){
+    h+='<div class="sec">Registro fotográfico <span class="mini" style="margin:0">Opcional · hasta 9 fotos</span></div>';
+    h+='<div class="afotos">'+ACTA.fotos.map(function(f,i){return '<figure><img src="'+f.url+'" alt=""><select data-fotopie="'+i+'" aria-label="Etapa de la foto">'+["Antes","Durante","Después"].map(function(x){return '<option'+(f.pie===x?" selected":"")+'>'+x+'</option>'}).join("")+'</select><button type="button" class="btn" data-fotodel="'+i+'" aria-label="Quitar foto">'+ic("x")+'</button></figure>'}).join("")+
+       (ACTA.fotos.length<9?'<label class="afadd">'+ic("plus")+'<span>Agregar fotos</span><input type="file" accept="image/*" multiple data-actafoto="1" hidden></label>':'')+'</div>';
+    if(!ACTA.fotos.length)h+='<p class="mini" style="margin:0">Sin fotos, el acta se genera igual, solo sin la página de registro fotográfico.</p>';
+    h+='<div class="sec">Firma de quien recibe <button type="button" class="btn" data-firmaclr="1">Borrar firma</button></div><div class="firma"><canvas id="acta_firma" aria-label="Firma con el dedo o el mouse"></canvas><span class="mini firmah">Firme aquí con el dedo o el mouse (opcional)</span></div>';
+  }
+  h+='<details class="adet"><summary>Cobertura y condiciones de la garantía</summary>'+fld("cond","Texto del certificado (editable)","area",' rows="9"')+'</details>';
+  h+='</div><div class="sf"><button class="btn" data-actax="1">Cancelar</button><button class="btn" data-actapdf="dl">'+ic("dl")+'Descargar PDF</button><button class="btn pri" data-actapdf="share">'+ic("pdf")+'Compartir PDF</button></div></div>';
+  L.innerHTML=h;L.querySelector(".aw").scrollTop=st;
+  if(full)actaPad()}
+function actaPad(){var c=document.getElementById("acta_firma");if(!c)return;var r=c.getBoundingClientRect(),dpr=Math.max(1,window.devicePixelRatio||1);c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);var x=c.getContext("2d");x.scale(dpr,dpr);x.lineWidth=2.2;x.lineCap="round";x.lineJoin="round";x.strokeStyle="#0D1B2E";
+  if(ACTA.firmaImg){var im=new Image();im.onload=function(){x.drawImage(im,0,0,r.width,r.height)};im.src=ACTA.firmaImg;c.parentNode.classList.add("ok")}
+  var down=false,last=null;function pt(e){var b=c.getBoundingClientRect();return [e.clientX-b.left,e.clientY-b.top]}
+  c.addEventListener("pointerdown",function(e){down=true;last=pt(e);c.setPointerCapture(e.pointerId);c.parentNode.classList.add("ok");e.preventDefault()});
+  c.addEventListener("pointermove",function(e){if(!down)return;var p=pt(e);x.beginPath();x.moveTo(last[0],last[1]);x.lineTo(p[0],p[1]);x.stroke();last=p;e.preventDefault()});
+  function up(){if(!down)return;down=false;ACTA.firma=true;ACTA.firmaImg=c.toDataURL("image/png")}
+  c.addEventListener("pointerup",up);c.addEventListener("pointercancel",up)}
+function canvasJpg(cv,q){var u=cv.toDataURL("image/jpeg",q||0.85),b=atob(u.split(",")[1]),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return {w:cv.width,h:cv.height,bytes:a}}
+function actaFirmaImg(){if(!ACTA.firmaImg)return Promise.resolve(null);return new Promise(function(res){var im=new Image();im.onload=function(){var cv=document.createElement("canvas"),k=Math.min(1,900/im.width);cv.width=Math.round(im.width*k);cv.height=Math.round(im.height*k);var x=cv.getContext("2d");x.fillStyle="#FFFFFF";x.fillRect(0,0,cv.width,cv.height);x.drawImage(im,0,0,cv.width,cv.height);res(canvasJpg(cv,0.9))};im.onerror=function(){res(null)};im.src=ACTA.firmaImg})}
+function actaAddFotos(files){var list=[].slice.call(files||[]).slice(0,9-ACTA.fotos.length);if(!list.length)return;toast("Preparando fotos…");
+  Promise.all(list.map(function(f){return new Promise(function(res){var u=URL.createObjectURL(f),im=new Image();im.onload=function(){var k=Math.min(1,1400/Math.max(im.width,im.height)),cv=document.createElement("canvas");cv.width=Math.round(im.width*k);cv.height=Math.round(im.height*k);var x=cv.getContext("2d");x.fillStyle="#FFFFFF";x.fillRect(0,0,cv.width,cv.height);x.drawImage(im,0,0,cv.width,cv.height);var j=canvasJpg(cv,0.82);URL.revokeObjectURL(u);res({url:cv.toDataURL("image/jpeg",0.6),img:j,pie:""})};im.onerror=function(){URL.revokeObjectURL(u);res(null)};im.src=u})})).then(function(arr){var n0=ACTA.fotos.length;arr.forEach(function(a){if(a)ACTA.fotos.push(a)});var n=ACTA.fotos.length;ACTA.fotos.forEach(function(f,i){if(i>=n0&&!f.pie)f.pie=i===0?"Antes":i===n-1?"Después":"Durante"});actaRender()})}
+function buildActaPDF(A){
+  var o=byId("obras",A.obraId)||{},cli=byId("clientes",o.clienteId)||{},cot=byId("cotizaciones",o.cotizacionId)||{};
+  var full=A.tipo==="acta",vence=addMonths(A.fecha,A.meses),num=(cot.numero?cot.numero:String(o.id||"").slice(0,6).toUpperCase())+"/"+String(A.fecha).slice(0,4);
+  var d=new PDFDoc((full?"Acta de entrega y garantía":"Certificado de garantía")+" · "+(cli.nombre||o.nombre||"")+" · Dryco Chile"),W=d.W,H=d.H,M=42,CW=W-2*M,y=0,BOT=H-70;
+  var dir=[o.direccion||cli.direccion,o.comuna||cli.comuna].filter(Boolean).join(", ");
+  function band(t,sub){d.addPage();d.rect(0,0,W,112,PC.navy);d.image(LOGO_NAVY,M,26,128,128*LOGO_NAVY.h/LOGO_NAVY.w);d.text(sub,W-M,38,{f:"B",sz:8,c:PC.cyan,ls:2,align:"right"});d.text("N° "+num,W-M,53,{sz:8.6,c:PC.sky,align:"right"});
+    d.text(t,M,94,{f:"B",sz:21,c:"#FFFFFF"});d.grad(0,112,W,4,GRAD);y=140;foot()}
+  function cont(t){d.addPage();d.rect(0,0,W,44,PC.navy);d.image(LOGO_NAVY,M,12,70,70*LOGO_NAVY.h/LOGO_NAVY.w);d.text(t,W-M,27,{f:"B",sz:9,c:"#FFFFFF",align:"right"});d.grad(0,44,W,3,GRAD);y=70;foot()}
+  function foot(){d.line(M,H-46,W-M,H-46,PC.line,0.6);d.text(EMP.razon+" · RUT "+EMP.rut+" · "+EMP.dir,M,H-32,{sz:7.2,c:PC.mut});d.text(EMP.tel+" · "+EMP.mail+" · "+EMP.web,M,H-21,{sz:7.2,c:PC.mut})}
+  function sec(t){d.text(t,M,y,{f:"B",sz:8.4,c:PC.acc,ls:1.5});y+=7;d.line(M,y,W-M,y,PC.line,0.6);y+=15}
+  function kvgrid(rows){var cw=(CW-16)/2,i=0;rows=rows.filter(function(r){return r[1]});while(i<rows.length){var a=rows[i],b=rows[i+1];var la=wrapText(a[1],"B",9.6,cw-4),lb=b?wrapText(b[1],"B",9.6,cw-4):[];var hh=12+Math.max(la.length,lb.length)*12.5;
+      [[a,la,M],[b,lb,M+cw+16]].forEach(function(c){if(!c[0])return;d.text(c[0][0].toUpperCase(),c[2],y,{f:"B",sz:6.8,c:PC.mut,ls:1});c[1].forEach(function(s,k){d.text(s,c[2],y+13+k*12.5,{f:"B",sz:9.6,c:PC.ink})})});y+=hh+8;i+=2}}
+  function para(t,sz){wrapText(t,"R",sz||9.6,CW).forEach(function(s){if(y>BOT)cont(full?"Acta de entrega":"Certificado de garantía");d.text(s,M,y,{sz:sz||9.6,c:PC.ink});y+=(sz||9.6)*1.42});y+=6}
+  if(full){
+    band("Acta de recepción y entrega de obra","ACTA DE ENTREGA");
+    sec("DATOS DE LA OBRA");
+    kvgrid([["Cliente",cli.nombre||A.recibe],["RUT",cli.rut||A.rut],["Dirección",dir],["Obra",o.nombre],["Servicio",o.servicio],["Superficie",A.m2?String(A.m2).replace(".",",")+" m²":""],["Cotización",cot.numero?"N° "+cot.numero:""],["Fecha de entrega",actaLongDate(A.fecha)],["Inicio de los trabajos",o.inicio?actaLongDate(o.inicio):""],["Garantía",A.meses+" meses · hasta el "+actaLongDate(vence)]]);
+    y+=4;sec("TRABAJO REALIZADO");para(A.trabajo);
+    if(String(A.sistema||"").trim()){sec("SISTEMA Y PRODUCTOS APLICADOS");para(A.sistema)}
+    if(String(A.obs||"").trim()){sec("OBSERVACIONES");para(A.obs)}
+    var ft=A.fotos.filter(function(f){return f&&f.img});
+    if(ft.length){var cols=ft.length===1?1:ft.length===2||ft.length===4?2:3,gw=(CW-(cols-1)*10)/cols,gh=Math.round(gw*(cols===1?0.56:0.72));
+      if(y+gh+46>BOT)cont("Acta de entrega · registro fotográfico");sec("REGISTRO FOTOGRÁFICO");
+      for(var i=0;i<ft.length;i++){var c=i%cols;if(c===0&&i>0)y+=gh+26;if(y+gh+22>BOT){cont("Acta de entrega · registro fotográfico");sec("REGISTRO FOTOGRÁFICO (CONT.)")}
+        var x=M+c*(gw+10);d.imageR(ft[i].img,x,y,gw,gh,8);d.rrect(x+8,y+8,tw(ft[i].pie.toUpperCase(),"B",7)+14,16,8,PC.navy);d.text(ft[i].pie.toUpperCase(),x+15,y+19,{f:"B",sz:7,c:"#FFFFFF",ls:0.6})}
+      y+=gh+30}
+    var need=176;if(y+need>BOT)cont("Acta de entrega · conformidad");
+    sec("CONFORMIDAD");
+    para("Quien firma declara recibir conforme los trabajos descritos, ejecutados por Dryco Chile SpA según lo cotizado, y que las superficies fueron entregadas limpias y en condiciones de uso, respetando los tiempos de curado indicados. Con esta fecha comienza a regir la garantía de "+A.meses+" meses, detallada en el certificado adjunto.",9.4);
+    y+=4;var bw=(CW-24)/2,bh=90;
+    [[M,"RECIBE CONFORME",A.recibe||cli.nombre||"",A.rut?"RUT "+A.rut:"",A.firmaJ],[M+bw+24,"ENTREGA",EMP.firma,EMP.cargo+" · Dryco Chile SpA",null]].forEach(function(b){d.rrect(b[0],y,bw,bh,10,"#FFFFFF",PC.line,0.8);d.text(b[1],b[0]+12,y+17,{f:"B",sz:7,c:PC.mut,ls:1.2});
+      if(b[4]){var ih=36,iw=Math.min(bw-24,ih*b[4].w/b[4].h);d.image(b[4],b[0]+12,y+22,iw,ih)}
+      d.line(b[0]+12,y+bh-30,b[0]+bw-12,y+bh-30,PC.mut,0.6);d.text(b[2],b[0]+12,y+bh-17,{f:"B",sz:9,c:PC.ink});if(b[3])d.text(b[3],b[0]+12,y+bh-6,{sz:7.6,c:PC.mut})});
+    y+=bh+10;
+  }
+  // certificado
+  band("Certificado de garantía","CERTIFICADO DE GARANTÍA");
+  d.rrect(M,y,CW,92,12,PC.navy);d.grad(M,y,CW,4,GRAD);
+  d.text("GARANTÍA POR ESCRITO",M+18,y+26,{f:"B",sz:7.6,c:PC.cyan,ls:1.6});d.text(A.meses+" meses",M+18,y+56,{f:"B",sz:26,c:"#FFFFFF"});
+  d.text("Vigente desde el "+actaLongDate(A.fecha),W-M-18,y+42,{f:"B",sz:10,c:"#FFFFFF",align:"right"});d.text("hasta el "+actaLongDate(vence),W-M-18,y+58,{f:"B",sz:10,c:"#FFFFFF",align:"right"});
+  d.text(o.servicio?"Servicio: "+o.servicio:"",W-M-18,y+76,{sz:8.4,c:PC.sky,align:"right"});y+=118;
+  para(EMP.razon.replace("SPA","SpA")+", RUT "+EMP.rut+", certifica que los trabajos de impermeabilización realizados para "+(A.recibe||cli.nombre||"el cliente")+(A.rut?", RUT "+A.rut:"")+(dir?", en "+dir:"")+(cot.numero?", según cotización N° "+cot.numero:"")+", cuentan con garantía de "+A.meses+" meses a contar del "+actaLongDate(A.fecha)+".",10.2);
+  y+=2;sec("TRABAJO GARANTIZADO");para(A.trabajo+(A.m2?" Superficie: "+String(A.m2).replace(".",",")+" m².":""));
+  if(String(A.sistema||"").trim()){sec("SISTEMA APLICADO");para(A.sistema)}
+  sec("COBERTURA Y CONDICIONES");
+  String(A.cond||"").split(/\n+/).map(function(s){return s.trim()}).filter(Boolean).forEach(function(p){var ls=wrapText(p,"R",9.2,CW-16);if(y+ls.length*13>BOT)cont("Certificado de garantía");d.circle(M+3.4,y-3.1,2.4,PC.blue);ls.forEach(function(s){d.text(s,M+14,y,{sz:9.2,c:PC.ink});y+=13});y+=6});
+  if(y+92>BOT)cont("Certificado de garantía");y+=14;
+  d.line(M,y+40,M+210,y+40,PC.mut,0.6);d.text(EMP.firma,M,y+54,{f:"B",sz:9.6,c:PC.ink});d.text(EMP.cargo+" · Dryco Chile SpA",M,y+66,{sz:8,c:PC.mut});d.text(EMP.mail2+" · "+EMP.tel,M,y+77,{sz:8,c:PC.mut});
+  d.rrect(W-M-170,y+8,170,64,10,PC.soft,PC.line,0.6);d.text("Emitido el "+actaLongDate(today()),W-M-160,y+30,{sz:8,c:PC.mut});d.text("Garantía N° "+num,W-M-160,y+46,{f:"B",sz:9,c:PC.navy});d.text("Conserve este documento",W-M-160,y+60,{sz:7.6,c:PC.mut});
+  return d.output()}
+function actaFileName(A){var o=byId("obras",A.obraId)||{},cli=byId("clientes",o.clienteId)||{};return (A.tipo==="acta"?"Acta_entrega_y_garantia_":"Certificado_garantia_")+slug(cli.nombre||o.nombre)+"_"+A.fecha+".pdf"}
+function actaGenerate(share){actaRead();var A=ACTA;if(!A)return;
+  if(!A.fecha){toast("Indica la fecha de entrega");return}if(!(+A.meses>0)){toast("Indica los meses de garantía");return}if(!String(A.trabajo||"").trim()){toast("Describe el trabajo realizado");return}
+  actaFirmaImg().then(function(fj){A.firmaJ=A.tipo==="acta"?fj:null;var bytes=buildActaPDF(A),name=actaFileName(A);
+    patch("obras",A.obraId,{garantia:+A.meses,garantiaDesde:A.fecha,garantiaVence:addMonths(A.fecha,A.meses),actaFecha:today(),actaTipo:A.tipo,sistemaAplicado:A.sistema||null});
+    if(share){try{var f=new File([bytes],name,{type:"application/pdf"});if(navigator.canShare&&navigator.canShare({files:[f]})){actaClose();navigator.share({files:[f],title:name.replace(/_/g," ").replace(/\.pdf$/,"")}).then(function(){if(downloads&&window.__saveDriveOnly)window.__saveDriveOnly(bytes,name)}).catch(function(e){if(!e||e.name!=="AbortError")savePdf(bytes,name)});return}}catch(e){}}
+    savePdf(bytes,name);actaClose()})}
+document.addEventListener("click",function(e){var t=e.target.closest("[data-acta],[data-actax],[data-actapdf],[data-fotodel],[data-firmaclr]");if(!t)return;
+  if(t.dataset.acta){e.preventDefault();var id=t.dataset.acta;closeSheet();actaOpen(id);return}
+  if(t.dataset.actax){actaClose();return}
+  if(t.dataset.actapdf){actaGenerate(t.dataset.actapdf==="share");return}
+  if(t.dataset.fotodel){actaRead();ACTA.fotos.splice(+t.dataset.fotodel,1);actaRender();return}
+  if(t.dataset.firmaclr){ACTA.firma=null;ACTA.firmaImg=null;actaRead();actaRender();return}});
+document.addEventListener("change",function(e){if(!ACTA)return;var t=e.target;
+  if(t.dataset&&t.dataset.actafoto){actaRead();actaAddFotos(t.files);return}
+  if(t.name==="acta_tipo"){actaRead();actaRender();return}
+  if(t.id==="acta_fecha"||t.id==="acta_meses"){actaRead();actaRender()}});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&ACTA)actaClose()});
 
 /* ---------- events ---------- */
 document.addEventListener("click",function(e){
