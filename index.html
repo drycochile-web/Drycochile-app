@@ -464,6 +464,10 @@ html[data-rol] #acrw .acqsum{display:grid!important}
 .calb{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;border:1px solid var(--line);color:var(--accent);flex:none;background:var(--surface)}.calb svg{width:16px;height:16px}
 .kpib .v{font-size:clamp(19px,5.6vw,24px)}.kpib{text-align:left;cursor:pointer;font:inherit;color:inherit;width:100%;transition:box-shadow .15s,border-color .15s}.kpib:hover{border-color:var(--accent)}.kpi .l{display:flex;justify-content:space-between;align-items:center;gap:6px}.kgo{font-size:11.5px;font-weight:600;color:var(--accent);letter-spacing:0;text-transform:none}
 #kpiw .sum{margin-top:6px}
+.tmes{display:grid;border:1px solid var(--line);border-radius:12px;overflow:hidden}.tmh,.tmr{display:grid;grid-template-columns:1fr .8fr .8fr .8fr .9fr 1.2fr;gap:6px;align-items:center;padding:9px 12px;font-size:13px;text-align:right}
+.tmh{background:var(--surface2);font-size:11.5px;color:var(--mut);font-weight:600}.tmh span:first-child,.tmr span:first-child{text-align:left}
+.tmr{all:unset;display:grid;grid-template-columns:1fr .8fr .8fr .8fr .9fr 1.2fr;gap:6px;align-items:center;padding:9px 12px;font-size:13px;text-align:right;border-top:1px solid var(--line);cursor:pointer}.tmr:hover,.tmr.on{background:var(--surface2)}
+#kpiw .card{box-shadow:none}
 </style>
 
 <div class="app">
@@ -758,13 +762,14 @@ function vPanel(){
   var h='<div class="head"><div><h1>Panel</h1><p>'+esc(fdate(t,true))+'</p></div><div class="row-actions"><button class="btn" data-xlsx="all"'+(downloads?'':' hidden')+'>'+ic("dl")+'Descargar Excel</button><button class="btn" data-new="agenda">'+ic("agenda")+'Agendar</button><button class="btn pri add" data-new="cotizaciones">'+ic("plus")+'Nueva cotización</button></div></div>';
   h+='<div class="kpis">'+
    kpi("Cotizado este mes",money(sum(cotMes,function(c){return c.neto})),cotMes.length+(cotMes.length===1?" cotización · neto":" cotizaciones · neto"),"cot")+
-   kpi("Tasa de aceptación",acc==null?"—":acc+" %",dec.length?nAc+" de "+(nAc+nRe)+" respondidas":"Sin respuestas aún","tasa")+
+   (function(){var TM=tasaMes(mo),r=TM.ac.length+TM.re.length;return kpi("Aceptación "+mesLabel(mo,true).replace(/ de \d{4}$/,""),TM.tasa==null?"—":TM.tasa+" %",r?TM.ac.length+" de "+r+" respondidas"+(TM.en.length?" · "+TM.en.length+" esperando":""):(TM.en.length?TM.en.length+" esperando respuesta":"Sin cotizaciones respondidas"),"tasa")})()+
    kpi("Por cobrar",money(porCobrar),(pend.length?pend.length+(pend.length===1?" proyecto terminado · con IVA":" proyectos terminados · con IVA"):"Todo pagado"),"cobrar")+
    kpi("Ganancia "+mesLabel(mo,true).replace(/ de \d{4}$/,""),money(RM.ganancia),RM.obras.length?RM.obras.length+(RM.obras.length===1?" proyecto · sin IVA":" proyectos · sin IVA"):"Sin proyectos terminados","ganancia")+'</div>';
   h+='<div class="grid2"><div class="card"><div class="ch"><h3>Venta y gastos por mes</h3><span class="mini">Últimos 6 meses · neto</span></div><div class="chart">'+chart(MR)+'</div><div class="legend"><span><i style="background:var(--accent)"></i>Proyectos terminados</span><span><i style="background:var(--mut);opacity:.45"></i>Gastos de esos proyectos + generales</span></div></div>';
   // agenda next 7 days
   var up=S.agenda.filter(function(a){return !a.hecho&&a.fecha>=t&&a.fecha<=addDays(t,7)}).sort(agSort).slice(0,6);
   h+='<div class="card"><div class="ch"><h3>Próximos 7 días</h3><a class="mini" href="#agenda">Ver agenda</a></div>'+(up.length?'<div>'+up.map(function(a){return agRow(a,true)}).join("")+'</div>':emptyBox("Nada agendado esta semana","Agenda visitas técnicas e inicios de proyecto.","agenda"))+'</div></div>';
+  h+=tasaCard();
   // proyectos activos, seguimientos, stock
   var seg=S.cotizaciones.filter(function(c){return c.estado==="Enviada"}).sort(function(a,b){return (a.seguimiento||a.fecha||"").localeCompare(b.seguimiento||b.fecha||"")}).slice(0,6);
   var low=S.materiales.filter(function(m){return (+m.minimo||0)>0&&(+m.stock||0)<=(+m.minimo||0)});
@@ -793,6 +798,24 @@ function mesesCard(MR){
 }
 function kpi(l,v,s,k){return '<'+(k?'button type="button" data-kpi="'+k+'"':'div')+' class="card kpi'+(k?' kpib':'')+'"><div class="l">'+esc(l)+(k?'<span class="kgo" aria-hidden="true">›</span>':'')+'</div><div class="v">'+v+'</div><div class="s">'+esc(s)+'</div></'+(k?'button':'div')+'>'}
 function emptyBox(t,s,c){return '<div class="empty"><b>'+esc(t)+'</b>'+esc(s)+(c?'<br><button class="btn" data-new="'+c+'">'+ic("plus")+'Agregar '+esc(SCH[c].one)+'</button>':'')+'</div>'}
+function tasaMes(ym){var L=S.cotizaciones.filter(function(c){return (c.fecha||"").slice(0,ym.length)===ym&&c.estado!=="Borrador"});
+  var ac=L.filter(function(c){return c.estado==="Aceptada"}),re=L.filter(function(c){return c.estado==="Rechazada"}),en=L.filter(function(c){return c.estado==="Enviada"});
+  return {ym:ym,todas:L,ac:ac,re:re,en:en,tasa:(ac.length+re.length)?Math.round(100*ac.length/(ac.length+re.length)):null}}
+function tasaYears(){var y={};y[today().slice(0,4)]=1;S.cotizaciones.forEach(function(c){if(c.fecha)y[c.fecha.slice(0,4)]=1});return Object.keys(y).sort().reverse()}
+var MESC=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+function tasaChart(yr){yr=+yr||+today().slice(0,4);var cur=today().slice(0,7);
+  var A=MESC.map(function(_,i){var ym=yr+"-"+pad(i+1);return ym>cur?null:tasaMes(ym).tasa}),Bv=MESC.map(function(_,i){return tasaMes((yr-1)+"-"+pad(i+1)).tasa});
+  var W=560,H=250,L=48,Bm=30,T=26,R=12,pw=W-L-R,ph=H-Bm-T,gw=pw/12;
+  function X(i){return L+gw*i+gw/2}function Y(v){return T+ph-(v/100)*ph}
+  var s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Tasa de aceptación por mes, '+yr+' comparado con '+(yr-1)+'">';
+  [0,25,50,75,100].forEach(function(v){s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--line)"/><text x="'+(L-6)+'" y="'+(Y(v)+4)+'" text-anchor="end" font-size="14" fill="var(--mut)">'+v+'%</text>'});
+  MESC.forEach(function(m,i){s+='<text x="'+X(i)+'" y="'+(H-8)+'" text-anchor="middle" font-size="14" fill="var(--mut)">'+m+'</text>'});
+  function line(vals,col,dash,lab){var d="",seg=false;vals.forEach(function(v,i){if(v==null){seg=false;return}d+=(seg?"L":"M")+X(i).toFixed(1)+" "+Y(v).toFixed(1);seg=true});
+    var o=d?'<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="2.4"'+(dash?' stroke-dasharray="5 4"':'')+' stroke-linejoin="round" stroke-linecap="round"/>':'';
+    vals.forEach(function(v,i){if(v==null)return;o+='<circle cx="'+X(i)+'" cy="'+Y(v)+'" r="'+(dash?3:4)+'" fill="'+(dash?"var(--surface)":col)+'" stroke="'+col+'" stroke-width="2"><title>'+MESC[i]+' '+lab+': '+v+' %</title></circle>';if(!dash)o+='<text x="'+X(i)+'" y="'+(Y(v)-9)+'" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">'+v+'%</text>'});return o}
+  s+=line(Bv,"var(--mut)",true,String(yr-1))+line(A,"var(--accent)",false,String(yr));
+  return s+'</svg>'}
+function tasaCard(yr){yr=yr||today().slice(0,4);return '<div class="card"><div class="ch"><h3>Tasa de aceptación por mes</h3><span class="mini">Aceptadas ÷ respondidas · según fecha de la cotización</span></div><div class="chart">'+tasaChart(yr)+'</div><div class="legend"><span><i style="background:var(--accent)"></i>'+esc(yr)+'</span><span><i style="background:var(--mut);opacity:.6"></i>'+esc(yr-1)+'</span></div></div>'}
 function chart(MR){
   MR=MR||mesesRes();
   var t=pdate(today()),ms=[];for(var i=5;i>=0;i--){var d=new Date(t.getFullYear(),t.getMonth()-i,1);ms.push(d.getFullYear()+"-"+pad(d.getMonth()+1))}
@@ -1847,13 +1870,23 @@ function reachCSV(){var R=reachRows();if(!R.length){toast("No hay clientes con c
 document.addEventListener("click",function(e){var t=e.target.closest("[data-reach]");if(!t)return;e.preventDefault();reachCSV()});
 
 /* ---------- detalle de los indicadores del Panel ---------- */
-function kpiOpen(k){var t=today(),mo=t.slice(0,7),h="",title="",sub="";
+function kpiOpen(k,arg){var t=today(),mo=t.slice(0,7),h="",title="",sub="";
   function cotRow(c){return '<button class="it" data-open="cotizaciones" data-id="'+c.id+'"><span class="t">COT '+esc(c.numero)+' · '+esc(nameOf("clientes",c.clienteId)||"Sin cliente")+'</span><span class="m">'+esc([fdate(c.fecha),c.servicio,c.estado==="Rechazada"&&c.motivo?"Motivo: "+c.motivo:""].filter(Boolean).join(" · "))+'</span><span class="r"><span class="amt">'+money(c.neto)+'</span>'+pillFor(c.estado)+'</span></button>'}
   function blk(t2,rows,empty,tot){return '<div class="sec">'+esc(t2)+(tot!=null?'<span class="mini" style="margin:0"><b>'+tot+'</b></span>':'')+'</div>'+(rows.length?'<div class="sublist list">'+rows.join("")+'</div>':'<div class="mini" style="max-width:none">'+esc(empty)+'</div>')}
   if(k==="cot"){var all=S.cotizaciones.filter(function(c){return (c.fecha||"").slice(0,7)===mo&&c.estado!=="Borrador"}).sort(sorter("cotizaciones")),vig=all.filter(function(c){return c.estado!=="Rechazada"}),re=all.filter(function(c){return c.estado==="Rechazada"});
     title="Cotizado este mes";sub=mesLabel(mo,true)+" · valores netos";h=blk("Vigentes",vig.map(cotRow),"Sin cotizaciones vigentes este mes.",money(sum(vig,function(c){return c.neto})))+blk("Rechazadas (descontadas)",re.map(cotRow),"Ninguna rechazada este mes.",re.length?money(sum(re,function(c){return c.neto})):null)}
-  else if(k==="tasa"){var ac=S.cotizaciones.filter(function(c){return c.estado==="Aceptada"}).sort(sorter("cotizaciones")),rj=S.cotizaciones.filter(function(c){return c.estado==="Rechazada"}).sort(sorter("cotizaciones")),en=S.cotizaciones.filter(function(c){return c.estado==="Enviada"}).sort(sorter("cotizaciones"));
-    title="Tasa de aceptación";sub="Aceptadas ÷ (aceptadas + rechazadas)";h=blk("Aceptadas ("+ac.length+")",ac.map(cotRow),"Aún no hay aceptadas.",money(sum(ac,function(c){return c.neto})))+blk("Rechazadas ("+rj.length+")",rj.map(cotRow),"Ninguna rechazada.",rj.length?money(sum(rj,function(c){return c.neto})):null)+blk("Esperando respuesta ("+en.length+")",en.map(cotRow),"No hay cotizaciones esperando respuesta.",null)}
+  else if(k==="tasa"){var curY=today().slice(0,4),selM=(arg&&arg.length===7)?arg:null,yr=selM?selM.slice(0,4):((arg&&arg.length===4)?arg:curY),ys=tasaYears();
+    title="Tasa de aceptación";sub="Aceptadas ÷ (aceptadas + rechazadas), por mes de la cotización";
+    h='<div class="chips" style="margin-bottom:6px">'+ys.map(function(y){return '<button class="chip'+(y===yr?' on':'')+'" data-tyr="'+y+'">'+y+'</button>'}).join("")+'</div>';
+    h+=tasaCard(yr);
+    var TY=tasaMes(yr),TP=tasaMes(String(yr-1));
+    h+='<div class="sec">Resumen por mes<span class="mini" style="margin:0">Año '+esc(yr)+': <b>'+(TY.tasa==null?"—":TY.tasa+" %")+'</b> · '+esc(yr-1)+': <b>'+(TP.tasa==null?"—":TP.tasa+" %")+'</b></span></div>';
+    h+='<div class="tmes"><div class="tmh"><span>Mes</span><span>Cotiz.</span><span>Acept.</span><span>Rech.</span><span>Tasa</span><span>'+esc(yr-1)+'</span></div>'+MESC.map(function(m,i){var ym=yr+"-"+pad(i+1),T1=tasaMes(ym),T0=tasaMes((yr-1)+"-"+pad(i+1));if(!T1.todas.length&&!T0.todas.length)return "";
+      var dif=(T1.tasa!=null&&T0.tasa!=null)?T1.tasa-T0.tasa:null;
+      return '<button class="tmr'+(ym===selM?' on':'')+'" data-tmes="'+ym+'"><span>'+m+'</span><span>'+T1.todas.length+'</span><span>'+T1.ac.length+'</span><span>'+T1.re.length+'</span><b>'+(T1.tasa==null?"—":T1.tasa+" %")+'</b><span class="mini" style="margin:0">'+(T0.tasa==null?"—":T0.tasa+" %")+(dif!=null&&dif!==0?' <i style="font-style:normal;color:'+(dif>0?"var(--ok)":"var(--bad)")+'">'+(dif>0?"▲":"▼")+Math.abs(dif)+'</i>':'')+'</span></button>'}).join("")+'</div>';
+    var mm=selM||(yr===curY?today().slice(0,7):null);
+    if(mm){var TM=tasaMes(mm);h+='<div class="sec" style="margin-top:14px">'+esc(mesLabel(mm,true))+'</div>'+blk("Aceptadas ("+TM.ac.length+")",TM.ac.map(cotRow),"Ninguna aceptada este mes.",TM.ac.length?money(sum(TM.ac,function(c){return c.neto})):null)+blk("Rechazadas ("+TM.re.length+")",TM.re.map(cotRow),"Ninguna rechazada este mes.",TM.re.length?money(sum(TM.re,function(c){return c.neto})):null)+blk("Esperando respuesta ("+TM.en.length+")",TM.en.map(cotRow),"Ninguna esperando respuesta.",null)}
+    else h+='<p class="mini">Toca un mes para ver sus cotizaciones.</p>'}
   else if(k==="cobrar"){var pr=function(o,extra){var c=obraCalc(o);return '<button class="it" data-open="obras" data-id="'+o.id+'"><span class="t">'+esc(o.nombre)+'</span><span class="m">'+esc([nameOf("clientes",o.clienteId),o.estado,"Total "+money(c.total)+" · pagado "+money(c.cobrado)].filter(Boolean).join(" · "))+'</span><span class="r"><span class="amt">'+money(c.porCobrar)+'</span>'+(extra||'')+'</span></button>'};
     var te=S.obras.filter(function(o){return o.estado==="Terminada"&&obraCalc(o).porCobrar>0}),cu=S.obras.filter(function(o){return o.estado!=="Terminada"&&obraCalc(o).cobrado>0&&obraCalc(o).porCobrar>0}),sa=S.obras.filter(function(o){return o.estado!=="Terminada"&&!obraCalc(o).cobrado});
     title="Por cobrar";sub="Con IVA · toca un proyecto para cobrar por WhatsApp";h=blk("Proyectos terminados sin pagar",te.map(function(o){return pr(o,'<span class="pill bad">Cobrar</span>')}),"Todos los proyectos terminados están pagados.",money(sum(te,function(o){return obraCalc(o).porCobrar})))+blk("En curso: saldo al terminar (40 %)",cu.map(function(o){return pr(o)}),"Sin saldos de proyectos en curso.",cu.length?money(sum(cu,function(o){return obraCalc(o).porCobrar})):null)+blk("Sin anticipo registrado",sa.map(function(o){return pr(o,'<span class="pill warn">Anticipo</span>')}),"Todos los proyectos en curso tienen anticipo registrado.",null)}
@@ -1864,7 +1897,7 @@ function kpiOpen(k){var t=today(),mo=t.slice(0,7),h="",title="",sub="";
   var L=document.getElementById("kpiw");if(!L){L=document.createElement("div");L.id="kpiw";L.className="actaw";L.setAttribute("role","dialog");L.setAttribute("aria-modal","true");document.body.appendChild(L)}
   L.innerHTML='<div class="aw"><div class="sh"><div><h2>'+esc(title)+'</h2><div class="mini">'+esc(sub)+'</div></div><button class="x" data-kpix="1" aria-label="Cerrar">'+ic("x")+'</button></div><div class="sb">'+h+'</div></div>'}
 function kpiClose(){var L=document.getElementById("kpiw");if(L)L.remove()}
-document.addEventListener("click",function(e){var t=e.target.closest("[data-kpi],[data-kpix],#kpiw [data-open]");if(!t)return;if(t.dataset.kpi){kpiOpen(t.dataset.kpi);return}kpiClose()},true);
+document.addEventListener("click",function(e){var t=e.target.closest("[data-kpi],[data-kpix],#kpiw [data-open],#kpiw [data-tyr],#kpiw [data-tmes]");if(!t)return;if(t.dataset.kpi){kpiOpen(t.dataset.kpi);return}if(t.dataset.tyr||t.dataset.tmes){e.stopPropagation();var sc=document.querySelector("#kpiw .aw");var st=sc?sc.scrollTop:0;kpiOpen("tasa",t.dataset.tyr||t.dataset.tmes);var sc2=document.querySelector("#kpiw .aw");if(sc2)sc2.scrollTop=st;return}kpiClose()},true);
 document.addEventListener("click",function(e){var L=document.getElementById("kpiw");if(L&&e.target===L)kpiClose()});
 /* ---------- Acrimper: ficha del producto, documentos y cotizador rápido ---------- */
 var ACQ=null;
