@@ -443,6 +443,7 @@ a.btn{text-decoration:none;color:var(--ink)}a.btn.pri{color:#fff}
 .firma.ok .firmah{display:none}
 .adet{border:1px solid var(--line);border-radius:12px;padding:10px 12px}.adet summary{cursor:pointer;font-weight:600;font-size:14px}.adet .fld{margin-top:10px}.adet textarea{min-height:190px}
 .gar .it .r .pill{white-space:nowrap}
+.newref{display:grid;gap:8px;margin-top:8px;padding:10px;border:1px dashed var(--accent);border-radius:10px;background:var(--accent-soft)}.newref input,.newref select{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 11px;width:100%}
 </style>
 
 <div class="app">
@@ -514,7 +515,7 @@ var SCH={
   {k:"notas",l:"Notas internas",t:"area",full:1}]},
  obras:{label:"Obras",one:"obra",icon:"obra",filter:"estado",fields:[
   {k:"nombre",l:"Nombre de la obra",t:"text",req:1,full:1,hint:"Ej: Cubierta Brasilia 1145"},
-  {k:"clienteId",l:"Cliente",t:"ref",ref:"clientes"},
+  {k:"clienteId",l:"Cliente",t:"ref",ref:"clientes",nuevo:1},
   {k:"cotizacionId",l:"Cotización",t:"ref",ref:"cotizaciones"},
   {k:"servicio",l:"Servicio",t:"select",o:SERV},
   {k:"m2",l:"Superficie (m²)",t:"num"},
@@ -563,8 +564,8 @@ var SCH={
   {k:"tipo",l:"Tipo",t:"select",o:["Visita técnica","Inicio de obra","Trabajo en obra","Entrega","Reunión","Otro"],d:"Visita técnica"},
   {k:"fecha",l:"Fecha",t:"date",req:1,d:"today"},
   {k:"hora",l:"Hora",t:"time"},
-  {k:"clienteId",l:"Cliente",t:"ref",ref:"clientes"},
-  {k:"obraId",l:"Obra",t:"ref",ref:"obras"},
+  {k:"clienteId",l:"Cliente",t:"ref",ref:"clientes",nuevo:1},
+  {k:"obraId",l:"Obra",t:"ref",ref:"obras",nuevo:1},
   {k:"direccion",l:"Dirección",t:"text",full:1},
   {k:"notas",l:"Notas",t:"area",full:1}]},
  productos:{label:"Acrimper",one:"producto",icon:"mat",fields:[
@@ -1206,7 +1207,8 @@ function field(f,val){
   var id="f_"+f.k,cls="fld"+(f.full?" full":""),lab='<label for="'+id+'">'+esc(f.l)+(f.req?" *":"")+'</label>',hint=f.hint?'<span class="hint">'+esc(f.hint)+'</span>':"";
   if(val==null)val="";
   if(f.t==="select")return '<div class="'+cls+'">'+lab+'<select id="'+id+'" name="'+f.k+'">'+(f.d===undefined?'<option value="">—</option>':'')+f.o.map(function(o){return '<option'+(o===val?" selected":"")+'>'+esc(o)+'</option>'}).join("")+'</select>'+hint+'</div>';
-  if(f.t==="ref"){var opts=S[f.ref].slice().sort(function(a,b){return nameOf(f.ref,a.id).localeCompare(nameOf(f.ref,b.id),"es")});return '<div class="'+cls+'">'+lab+'<select id="'+id+'" name="'+f.k+'"><option value="">'+(opts.length?"— Sin seleccionar —":"No hay "+esc(SCH[f.ref].label.toLowerCase())+" registrados")+'</option>'+opts.map(function(o){return '<option value="'+o.id+'"'+(o.id===val?" selected":"")+'>'+esc(nameOf(f.ref,o.id))+'</option>'}).join("")+'</select>'+hint+'</div>'}
+  if(f.t==="ref"){var opts=S[f.ref].slice().sort(function(a,b){return nameOf(f.ref,a.id).localeCompare(nameOf(f.ref,b.id),"es")});var nv=f.nuevo&&(f.ref==="clientes"||f.ref==="obras");return '<div class="'+cls+'">'+lab+'<select id="'+id+'" name="'+f.k+'"'+(nv?' data-newref="'+f.k+'"':'')+'><option value="">'+(opts.length?"— Sin seleccionar —":"No hay "+esc(SCH[f.ref].label.toLowerCase())+" registrados")+'</option>'+(nv?'<option value="__new__">'+(f.ref==="clientes"?"+ Nuevo cliente…":"+ Nueva obra…")+'</option>':'')+opts.map(function(o){return '<option value="'+o.id+'"'+(o.id===val?" selected":"")+'>'+esc(nameOf(f.ref,o.id))+'</option>'}).join("")+'</select>'+hint+
+      (nv?'<div class="newref" id="nr_'+f.k+'" hidden>'+(f.ref==="clientes"?'<input id="nr_'+f.k+'_nombre" placeholder="Nombre del nuevo cliente *" autocomplete="off"><input id="nr_'+f.k+'_telefono" type="tel" placeholder="Teléfono (opcional)"><input id="nr_'+f.k+'_email" type="email" placeholder="Correo (opcional)">':'<input id="nr_'+f.k+'_nombre" placeholder="Nombre de la nueva obra *" autocomplete="off"><select id="nr_'+f.k+'_servicio"><option value="">Servicio (opcional)</option>'+SERV.map(function(x){return '<option>'+esc(x)+'</option>'}).join("")+'</select>')+'<span class="hint">Se creará '+(f.ref==="clientes"?"el cliente":"la obra")+' al guardar.</span></div>':'')+'</div>'}
   if(f.t==="multi"){var arr=val||[];var ppl=S[f.ref];return '<div class="'+cls+'"><label>'+esc(f.l)+'</label>'+(ppl.length?'<div class="ms">'+ppl.map(function(p){return '<label><input type="checkbox" name="'+f.k+'" value="'+p.id+'"'+(arr.indexOf(p.id)>=0?" checked":"")+'>'+esc(p.nombre)+'</label>'}).join("")+'</div>':'<span class="hint">Agrega personas en Equipo para asignarlas.</span>')+'</div>'}
   if(f.t==="area")return '<div class="'+cls+'">'+lab+'<textarea id="'+id+'" name="'+f.k+'">'+esc(val)+'</textarea>'+hint+'</div>';
   var type={date:"date",time:"time",tel:"tel",email:"email",num:"number"}[f.t]||"text";
@@ -1229,9 +1231,15 @@ function readForm(){
   return out;
 }
 function updIva(){var h=document.getElementById("ivaHint");if(!h)return;var F=document.getElementById("frm");var n=parseMoney(F.elements.neto.value)||0;var m2=+(F.elements.m2.value)||0;h.textContent=n?("IVA "+money(n*IVA)+" · Total "+money(n*(1+IVA))+(m2?" · "+money(n/m2)+" neto por m²":"")):""}
-function submit(){var st=sheetState;var data=readForm();if(!data)return;var btn=document.querySelector('[data-submit]');if(btn)btn.disabled=true;
-  var base=st.id?clean(byId(st.c,st.id)||{}):{};var full=Object.assign(base,data);
-  save(st.c,st.id,full).then(function(ref){var c=st.c;var nid=st.id||(ref&&ref.id);closeSheet();if(!st.id&&(c==="obras"||c==="clientes"||c==="cotizaciones"||c==="servicios")&&nid)openDetail(c,nid)},function(){if(btn)btn.disabled=false})}
+function newRefs(st,data){var F=SCH[st.c].fields.filter(function(f){return f.nuevo&&data[f.k]==="__new__"}).sort(function(a,b){return a.ref==="clientes"?-1:1});
+  for(var i=0;i<F.length;i++){var el=document.getElementById("nr_"+F[i].k+"_nombre");if(!el||!el.value.trim()){toast(F[i].ref==="clientes"?"Escribe el nombre del nuevo cliente":"Escribe el nombre de la nueva obra");if(el)el.focus();return null}}
+  var p=Promise.resolve();F.forEach(function(f){p=p.then(function(){var v=function(x){var e=document.getElementById("nr_"+f.k+"_"+x);return e&&e.value.trim()||null};var o;
+    if(f.ref==="clientes")o={nombre:v("nombre"),tipo:"Persona",telefono:v("telefono"),email:v("email"),direccion:data.direccion||null,rut:null,contacto:null,comuna:null,notas:null,creado:Date.now()};
+    else o={nombre:v("nombre"),clienteId:data.clienteId&&data.clienteId!=="__new__"?data.clienteId:null,servicio:v("servicio"),estado:"Programada",avance:0,garantia:24,conIva:"Sí",neto:null,direccion:data.direccion||null,inicio:st.c==="agenda"&&data.tipo==="Inicio de obra"?data.fecha:null,notas:null,creado:Date.now()};
+    return db.collection(f.ref).add(o).then(function(r){data[f.k]=r.id;toast(f.ref==="clientes"?"Cliente creado":"Obra creada")})})});return p.catch(function(e){toast("No se pudo crear el registro nuevo");throw e})}
+function submit(){var st=sheetState;var data=readForm();if(!data)return;var pre=newRefs(st,data);if(!pre)return;var btn=document.querySelector('[data-submit]');if(btn)btn.disabled=true;
+  pre.then(function(){var base=st.id?clean(byId(st.c,st.id)||{}):{};var full=Object.assign(base,data);
+  return save(st.c,st.id,full)}).then(function(ref){var c=st.c;var nid=st.id||(ref&&ref.id);closeSheet();if(!st.id&&(c==="obras"||c==="clientes"||c==="cotizaciones"||c==="servicios")&&nid)openDetail(c,nid)},function(){if(btn)btn.disabled=false})}
 
 function detailHTML(c,r){
   if(!r)return '<div class="sh"><h2>Cargando…</h2><button class="x" data-close="1" aria-label="Cerrar">'+ic("x")+'</button></div>';
@@ -1562,6 +1570,7 @@ document.addEventListener("change",function(e){if(!ACTA)return;var t=e.target;
   if(t.name==="acta_tipo"){actaRead();actaRender();return}
   if(t.id==="acta_fecha"||t.id==="acta_meses"){actaRead();actaRender()}});
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&ACTA)actaClose()});
+document.addEventListener("change",function(e){var t=e.target;if(!t.dataset||!t.dataset.newref)return;var b=document.getElementById("nr_"+t.dataset.newref);if(!b)return;b.hidden=t.value!=="__new__";if(!b.hidden){var i=b.querySelector("input");if(i)i.focus()}});
 
 /* ---------- events ---------- */
 document.addEventListener("click",function(e){
