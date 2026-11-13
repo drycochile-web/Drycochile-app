@@ -728,6 +728,7 @@ function clean(o){var r={};Object.keys(o).forEach(function(k){if(k!=="id"&&o[k]!
 function save(c,id,data){
   if(!db){toast("Sin conexión con los datos");return Promise.reject()}
   data=clean(data);data.actualizado=Date.now();
+  if(c==="cobros"){var cm=cobroCheck(id,data);if(cm){toast(cm);return Promise.reject(new Error(cm))}}
   var p=id?db.doc(c+"/"+id).set(data):db.collection(c).add(Object.assign({creado:Date.now()},data));
   if(!id&&c==="cotizaciones"&&data.numero)p=p.then(function(r){corrAfterNew(data.numero);return r});
   if(c==="cobros"&&data.tipo==="Saldo final"&&data.obraId)p=p.then(function(r){obraFinaliza(data.obraId,data.fecha);return r});
@@ -1323,6 +1324,13 @@ document.addEventListener("click",function(e){var t=e.target.closest("[data-cobr
   if(t.dataset.cobrar){e.preventDefault();cobqOpen(t.dataset.cobrar);return}
   if(t.dataset.cobqx){var L=document.getElementById("cobw");if(L)L.remove();COBQ=null;return}
   if(t.dataset.cobqpdf&&COBQ){var r=byId("obras",COBQ.id);if(!(+COBQ.o.pct>0)){toast("Indica el porcentaje a cobrar");return}pagoPDF(r,t.dataset.cobqpdf==="share",Object.assign({},COBQ.o))}});
+function cobroCheck(id,data){var o=byId("obras",data.obraId);if(!o)return "";var prev=S.cobros.filter(function(x){return x.obraId===o.id&&x.id!==id}),m=+data.monto||0;
+  if(!(m>0))return "Indica el monto recibido";
+  if(prev.some(function(x){return +x.monto===m&&x.fecha===data.fecha}))return "Ya hay un cobro de "+money(m)+" con esa fecha en este proyecto";
+  if(data.tipo==="Saldo final"&&prev.some(function(x){return x.tipo==="Saldo final"}))return "Este proyecto ya tiene registrado el pago final";
+  var neto=+o.neto||0;if(!neto)return "";var pn=neto-sum(prev,function(x){return cobNeto(x,o)}),f=cobIva(data,o)?1+IVA:1;
+  if(pn<=5)return "Este proyecto ya está pagado completo";
+  if(cobNeto(data,o)>pn+Math.max(10,pn*0.005))return "El monto supera lo pendiente ("+money(Math.round(pn*f))+")";return ""}
 function obraFinaliza(oid,fecha){var o=byId("obras",oid);if(!o||o.estado==="Terminada")return;var f=fecha||today();
   patch("obras",oid,{estado:"Terminada",avance:100,termino:o.termino&&o.termino<=f?o.termino:f});
   S.agenda.filter(function(a){return a.obraId===oid&&!a.hecho&&(a.fecha||"")<=f}).forEach(function(a){patch("agenda",a.id,{hecho:true})});
@@ -1379,7 +1387,7 @@ function detailHTML(c,r){
     var gs=S.gastos.filter(function(x){return x.obraId===r.id}).sort(function(a,b){return (b.fecha||"").localeCompare(a.fecha||"")});
     sb+='<div class="sec">Entrega y garantía <button class="btn pri" data-acta="'+r.id+'">'+ic("pdf")+'Acta y garantía</button></div>'+(r.estado==="Terminada"?'<div class="row-actions"><a class="btn" data-resena="'+r.id+'" href="'+esc(resenaWa(r))+'" target="_blank" rel="noopener">'+ic("wa")+(r.resenaPedida?'Reseña pedida el '+esc(fdate(r.resenaPedida))+' · volver a pedir':'Pedir reseña en Google')+'</a></div>':'')+'<div class="mini" style="max-width:none">'+(r.actaFecha?(r.actaTipo==="garantia"?"Certificado de garantía":"Acta de entrega y certificado de garantía")+" emitido el "+esc(fdate(r.actaFecha))+(garVence(r)?" · garantía vigente hasta el "+esc(fdate(garVence(r))):""):"Genera el acta de entrega con fotos y firma del cliente, o solo el certificado de garantía.")+'</div>';
     var ci=cobroInfo(r);
-    sb+='<div class="sec">Cobros <button class="btn" data-new="cobros" data-preset-obra="'+r.id+'">'+ic("plus")+'Registrar cobro</button></div><div class="row-actions">'+(ci.pagada?'<span class="pill ok">Proyecto pagado</span><button class="btn" data-pagopdf="'+r.id+'">'+ic("pdf")+'Comprobante PDF</button><button class="btn" data-pagopdf="'+r.id+'" data-mode="dl">'+ic("dl")+'Descargar</button>':'<button class="btn pri" data-cobrar="'+r.id+'">'+ic("wa")+'Cobrar · estado de pago</button><span class="mini" style="align-self:center">Pendiente '+money(ci.k.porCobrar)+'</span>')+'</div>'+(cb.length?'<div class="sublist list">'+cb.map(function(x){return rowHTML("cobros",x)}).join("")+'</div>':'<div class="mini">Sin cobros registrados.</div>');
+    sb+='<div class="sec">Cobros '+(ci.pagada?'':'<button class="btn" data-new="cobros" data-preset-obra="'+r.id+'">'+ic("plus")+'Registrar cobro</button>')+'</div><div class="row-actions">'+(ci.pagada?'<span class="pill ok">Proyecto pagado</span><button class="btn" data-pagopdf="'+r.id+'">'+ic("pdf")+'Comprobante PDF</button><button class="btn" data-pagopdf="'+r.id+'" data-mode="dl">'+ic("dl")+'Descargar</button>':'<button class="btn pri" data-cobrar="'+r.id+'">'+ic("wa")+'Cobrar · estado de pago</button><span class="mini" style="align-self:center">Pendiente '+money(ci.k.porCobrar)+'</span>')+'</div>'+(cb.length?'<div class="sublist list">'+cb.map(function(x){return rowHTML("cobros",x)}).join("")+'</div>':'<div class="mini">Sin cobros registrados.</div>');
     sb+='<div class="sec">Gastos del proyecto <button class="btn" data-new="gastos" data-preset-obra="'+r.id+'">'+ic("plus")+'Registrar gasto</button></div>'+(gs.length?'<div class="sublist list">'+gs.map(function(x){return rowHTML("gastos",x)}).join("")+'</div>':'<div class="mini">Sin gastos registrados.</div>');
   }else if(c==="cotizaciones"){
     var ob=S.obras.filter(function(o){return o.cotizacionId===r.id})[0];
