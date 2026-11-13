@@ -9,7 +9,7 @@
 .eyebrow{font:700 12px/1 Arial,sans-serif;letter-spacing:.12em;color:var(--acc);text-transform:uppercase}
 h2{margin:6px 0 2px;font-size:22px;line-height:1.2}
 .sub{color:var(--mut);margin:0 0 4px;font-size:14px}
-.bar{height:6px;background:#EEF2F8;border-radius:99px;margin:16px 0 18px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc);border-radius:99px;transition:width .3s}
+.bar{height:6px;background:#EEF2F8;border-radius:99px;margin:12px 0 18px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc);border-radius:99px;transition:width .3s}
 .q{font-weight:700;font-size:17px;margin:0 0 12px}
 .opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
 .opt{display:flex;gap:12px;align-items:center;text-align:left;border:1.5px solid var(--line);background:var(--soft);border-radius:14px;padding:14px;font:inherit;color:inherit;cursor:pointer;min-height:64px;transition:border-color .15s,background .15s}
@@ -65,7 +65,7 @@ function ev(name){try{parent.postMessage({dryco:name},"*")}catch(e){}try{if(top!
 function render(){var el=document.getElementById("app");
   if(step>=Q.length){el.innerHTML=result();height();return}
   var q=Q[step];
-  el.innerHTML='<div class="top"><div><div class="eyebrow">Diagnóstico rápido · paso '+(step+1)+' de '+Q.length+'</div><h2>¿Por dónde entra el agua?</h2><p class="sub">Responda 4 preguntas y le decimos qué revisar y qué solución suele corresponder.</p></div></div>'+
+  el.innerHTML='<div class="top"><div class="eyebrow">Diagnóstico rápido · paso '+(step+1)+' de '+Q.length+'</div></div>'+
    '<div class="bar"><i style="width:'+(step/Q.length*100)+'%"></i></div><p class="q" id="q">'+q.q+'</p><div class="opts" role="group" aria-labelledby="q">'+
    q.o.map(function(o){var ic=IC[o[0]]||IC.m2;return '<button class="opt'+(A[q.k]===o[0]?" on":"")+'" data-v="'+o[0]+'">'+ic+'<div><b>'+o[1]+'</b>'+(o[2]?'<span>'+o[2]+'</span>':'')+'</div></button>'}).join("")+'</div>'+
    '<div class="nav"><button class="lnk" data-back="1"'+(step?'':' disabled')+'>← Volver</button><span class="sub">Sin datos personales</span></div>';
