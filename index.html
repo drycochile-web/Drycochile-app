@@ -243,7 +243,7 @@ button{cursor:pointer}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 /* agenda */
 .day{font-family:var(--fd);font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;padding:12px 16px 4px}
-.ag{display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 16px;border-top:1px solid var(--line)}
+.ag{display:grid;grid-template-columns:54px minmax(0,1fr);grid-auto-flow:column;grid-auto-columns:auto;gap:12px;align-items:center;padding:10px 16px;border-top:1px solid var(--line)}
 .ag .h{font-variant-numeric:tabular-nums;font-weight:600}
 .ag.done .t{text-decoration:line-through;color:var(--mut)}
 .chk{width:26px;height:26px;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);display:grid;place-items:center}
@@ -498,6 +498,9 @@ html[data-rol] #acrw .acqsum{display:grid!important}
 .facr:first-child{border-top:0}.facr span{color:var(--mut);font-size:12.5px}.facr b{font-weight:600;word-break:break-word}.facr b small{font-weight:400;color:var(--warn)}
 .facr.miss b{color:var(--warn)}.facr button{border:0;background:none;color:var(--accent);padding:4px;cursor:pointer;display:grid;place-items:center}.facr button svg{width:16px;height:16px}
 #ofv .sf select{border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:var(--surface);font:inherit;color:var(--ink)}
+.solact{display:flex;align-items:center;gap:14px}
+@media (max-width:560px){.solcard .solact{display:contents}.solcard .ch h3{flex:1 1 auto}.solcard .solact .btn{flex:1 1 100%;justify-content:center}}
+@media (max-width:560px){.segit .row-actions{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;width:100%;gap:6px}.segit .row-actions .btn{justify-content:center;padding:9px 6px;font-size:13px;white-space:nowrap;min-width:0}}
 .btn.danger{color:var(--bad);border-color:var(--bad)}
 </style>
 
@@ -1584,7 +1587,7 @@ function solPill(r){var e=solEtapa(r),cl={"Nueva":"warn","En contacto":"","Visit
 function solTrack(r){var e=solEtapa(r),i=SOL_ETAPAS.indexOf(e),steps=["Nueva","En contacto","Visita agendada","Cotizada","Ganada"];if(i>4)return '<div class="mini" style="margin:6px 0 10px">Etapa: <b>'+esc(e)+'</b></div>';
   return '<div class="soltrack">'+steps.map(function(x,k){return '<div class="st'+(k<i?" done":k===i?" now":"")+'"><i>'+(k<i?"✓":k+1)+'</i><span>'+esc(x)+'</span></div>'}).join("")+'</div>'}
 document.addEventListener("click",function(e){var t=e.target.closest("[data-solcontact]");if(!t)return;var r=byId("solicitudes",t.dataset.solcontact);if(r&&solEtapa(r)==="Nueva")patch("solicitudes",r.id,{estado:"En contacto"})},true);
-function solCard(){var L=S.solicitudes.filter(function(x){return solEtapa(x)==="Nueva"}).sort(sorter("solicitudes"));return '<div class="card solcard"><div class="ch"><h3>'+(L.length?'Solicitudes nuevas · '+L.length:'Solicitudes')+'</h3><span class="row-actions" style="margin:0"><a class="mini" href="#solicitudes">Ver todas</a><button class="btn pri" data-solnew="1">'+ic("plus")+'Registrar solicitud</button></span></div>'+(L.length?'<div class="list">'+L.slice(0,5).map(function(r){return rowHTML("solicitudes",r)}).join("")+'</div>':'<div class="mini" style="padding:0 16px 14px">Sin solicitudes nuevas. Las de la web llegan solas; las de WhatsApp, llamadas o correo regístralas aquí.</div>')+'</div>'}
+function solCard(){var L=S.solicitudes.filter(function(x){return solEtapa(x)==="Nueva"}).sort(sorter("solicitudes"));return '<div class="card solcard"><div class="ch"><h3>'+(L.length?'Solicitudes nuevas · '+L.length:'Solicitudes')+'</h3><span class="solact"><a class="mini" href="#solicitudes">Ver todas</a><button class="btn pri" data-solnew="1">'+ic("plus")+'Registrar solicitud</button></span></div>'+(L.length?'<div class="list">'+L.slice(0,5).map(function(r){return rowHTML("solicitudes",r)}).join("")+'</div>':'<div class="mini" style="padding:0 16px 14px">Sin solicitudes nuevas. Las de la web llegan solas; las de WhatsApp, llamadas o correo regístralas aquí.</div>')+'</div>'}
 var SNW=null;
 function solNewOpen(pre){SNW=Object.assign({canal:"WhatsApp",nombre:"",telefono:"",email:"",comuna:"",servicios:[],urgencia:"",mensaje:""},pre||{});solNewRender()}
 function solNewRender(){var L=document.getElementById("solnw");if(!L){L=document.createElement("div");L.id="solnw";L.className="actaw";L.setAttribute("role","dialog");document.body.appendChild(L)}var d=SNW;
