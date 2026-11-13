@@ -1,0 +1,79 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0B1630">
+<title>Solicite su visita técnica · Dryco Chile</title><link rel="icon" type="image/png" href="../icons/favicon-32.png">
+<meta name="description" content="Solicite una visita técnica y cotización de impermeabilización con Dryco Chile. Respuesta en menos de 24 horas.">
+<style>
+:root{--navy:#0B1630;--ink:#0D1B2E;--mut:#5B6B80;--line:#D7DFEA;--acc:#1F5CA1;--soft:#F3F6FB;--ok:#16865A;--bad:#C2362F}
+*{box-sizing:border-box}html,body{margin:0}body{background:#EEF2F8;color:var(--ink);font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:15px;line-height:1.45}
+body.embed{background:transparent}
+.top{background:var(--navy);color:#fff;padding:22px 18px 26px;position:relative}.top:after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:linear-gradient(90deg,#8BE3DE,#5795DC,#4512BC)}
+.top img{height:34px;display:block}.top h1{margin:16px 0 4px;font-size:24px;line-height:1.2}.top p{margin:0;color:#B9CBE6;font-size:14px}
+body.embed .top{display:none}
+.w{max-width:680px;margin:0 auto;padding:16px}body.embed .w{padding:4px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 6px 20px rgba(11,22,48,.06)}body.embed .card{box-shadow:none}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}.g .full{grid-column:1/-1}
+label{display:block;font-weight:600;font-size:13.5px;color:var(--ink);margin:14px 0 6px}label i{color:var(--bad);font-style:normal}
+input,textarea,select{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;font:inherit;background:#F8FAFD;color:var(--ink)}
+input:focus,textarea:focus,select:focus{outline:2px solid #9DBCE6;border-color:var(--acc);background:#fff}
+textarea{min-height:110px;resize:vertical}
+.chips{display:flex;flex-wrap:wrap;gap:8px}.chips label{margin:0;display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:9px 14px;font-weight:500;cursor:pointer;background:#F8FAFD;font-size:14px}
+.chips input{width:auto;margin:0;accent-color:var(--acc)}.chips label:has(input:checked){border-color:var(--acc);background:#E8F0FB;color:#123E73}
+.chk{display:flex;gap:10px;align-items:flex-start;font-weight:400;font-size:13.5px;color:var(--mut);margin-top:16px}.chk input{width:auto;margin-top:3px;accent-color:var(--acc)}
+button{width:100%;margin-top:18px;border:0;border-radius:12px;background:var(--acc);color:#fff;font:700 16px Arial,sans-serif;padding:15px;cursor:pointer}button:disabled{opacity:.6;cursor:default}
+.err{color:var(--bad);margin-top:10px;min-height:1.2em;font-size:14px}.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.done{text-align:center;padding:26px 10px}.done .ic{width:56px;height:56px;border-radius:50%;background:#E5F5EE;color:var(--ok);display:grid;place-items:center;margin:0 auto 10px;font-size:30px}
+.done h2{margin:6px 0;font-size:21px}.done p{color:var(--mut);margin:6px 0}.done a{display:inline-block;margin-top:14px;background:#25A244;color:#fff;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:12px}
+.foot{text-align:center;color:var(--mut);font-size:12.5px;padding:12px 0 26px}body.embed .foot{display:none}
+@media (max-width:560px){.g{grid-template-columns:1fr}}
+</style></head><body>
+<div class="top"><div class="w" style="padding:0 0 0"><img src="../icons/logo-blanco.png" alt="Dryco Chile"><h1>Solicite su visita técnica y cotización</h1><p>Respuesta técnica en menos de 24 horas · Diagnóstico en terreno sin compromiso</p></div></div>
+<div class="w"><div class="card" id="box">
+<form id="f" novalidate>
+<div class="g">
+ <div><label for="nombre">Nombre y apellido <i>*</i></label><input id="nombre" name="nombre" autocomplete="name" required maxlength="80"></div>
+ <div><label for="telefono">Teléfono / WhatsApp <i>*</i></label><input id="telefono" name="telefono" type="tel" autocomplete="tel" inputmode="tel" placeholder="+56 9" required maxlength="30"></div>
+ <div class="lg"><label for="email">Correo electrónico</label><input id="email" name="email" type="email" autocomplete="email" maxlength="120"></div>
+ <div class="lg"><label for="tipoCliente">Tipo de cliente</label><select id="tipoCliente" name="tipoCliente"><option value="">Seleccione</option><option>Comunidad o edificio</option><option>Empresa o industria</option><option>Particular</option></select></div>
+ <div class="full lg"><label>Servicio que necesita (puede marcar varios) <i>*</i></label><div class="chips" id="servicios">
+  <label><input type="checkbox" value="Cubiertas y techos">Cubiertas y techos</label><label><input type="checkbox" value="Terrazas y balcones">Terrazas y balcones</label>
+  <label><input type="checkbox" value="Hormigón y estanques">Hormigón y estanques</label><label><input type="checkbox" value="Subterráneos y estacionamientos">Subterráneos y estacionamientos</label>
+  <label><input type="checkbox" value="Salas técnicas e industriales">Salas técnicas e industriales</label><label><input type="checkbox" value="No estoy seguro, necesito un diagnóstico">No estoy seguro, necesito un diagnóstico</label></div></div>
+ <div><label for="comuna">Comuna de la obra <i>*</i></label><input id="comuna" name="comuna" autocomplete="address-level2" required maxlength="60"></div>
+ <div class="lg"><label for="m2">Superficie aproximada en m²</label><input id="m2" name="m2" inputmode="decimal" maxlength="20"></div>
+ <div class="full lg"><label for="urgencia">¿Cuándo necesita el trabajo?</label><select id="urgencia" name="urgencia"><option value="">Seleccione</option><option>Tengo una filtración activa</option><option>Dentro del próximo mes</option><option>Estoy planificando o cotizando</option></select></div>
+ <div class="full lg"><label for="mensaje">Describa el problema <i>*</i></label><textarea id="mensaje" name="mensaje" maxlength="2000" placeholder="Dónde aparece la filtración o humedad, desde cuándo, tipo de superficie…"></textarea></div>
+</div>
+<div class="hp" aria-hidden="true"><label for="web">Sitio web</label><input id="web" name="web" tabindex="-1" autocomplete="off"></div>
+<label class="chk lg"><input type="checkbox" id="autoriza">Acepto recibir información y recomendaciones de mantención de Dryco Chile. Puedo darme de baja cuando quiera.</label>
+<button type="submit" id="go">Solicitar visita técnica y cotización</button>
+<div class="err" id="err" role="alert"></div>
+</form></div>
+<div class="foot">Dryco Chile SpA · +56 9 5606 9678 · contacto@drycochile.cl</div></div>
+<script>
+var EXEC="https://script.google.com/macros/s/AKfycbzhS66Ekgyq2HF7yVkoACSj7WFBG5AD1Hyj1h0sC_NCJdzKDqi_niiHfNk-gMDgZKzHdA/exec";
+/* Conversión de Google Ads (opcional): completar con el ID y la etiqueta de la conversión, p. ej. {id:"AW-123",label:"abc"} */
+var CONV=null;
+var Q=new URLSearchParams(location.search),CORTO=Q.get("corto")==="1";
+if(Q.get("embed")==="1")document.body.classList.add("embed");
+if(CORTO){[].forEach.call(document.querySelectorAll(".lg"),function(e){e.style.display="none"})}
+function call(fn,args){return fetch(EXEC,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({fn:fn,args:args}),redirect:"follow"}).then(function(r){return r.json()}).then(function(o){if(o&&o.ok)return o.r;throw new Error(o&&o.e||"ERR")})}
+function v(id){return (document.getElementById(id).value||"").trim()}
+function height(){try{parent.postMessage({dryco:"altura",h:document.documentElement.scrollHeight},"*")}catch(e){}}
+window.addEventListener("load",height);window.addEventListener("resize",height);
+if(CONV&&CONV.id){var s=document.createElement("script");s.async=1;s.src="https://www.googletagmanager.com/gtag/js?id="+CONV.id;document.head.appendChild(s);window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};gtag("js",new Date());gtag("config",CONV.id)}
+document.getElementById("f").addEventListener("submit",function(e){e.preventDefault();var err=document.getElementById("err");err.textContent="";
+  var serv=[].map.call(document.querySelectorAll("#servicios input:checked"),function(x){return x.value});
+  var d={nombre:v("nombre"),telefono:v("telefono"),email:v("email"),tipoCliente:v("tipoCliente"),servicios:serv,comuna:v("comuna"),m2:v("m2"),urgencia:v("urgencia"),mensaje:v("mensaje"),autoriza:document.getElementById("autoriza").checked,web:v("web"),origen:(CORTO?"drycochile.cl · formulario de inicio":"drycochile.cl · página Cotiza aquí")};
+  if(CORTO&&!d.mensaje)d.mensaje="Solicitud desde el formulario breve de la página de inicio.";
+  var falta=[];if(!d.nombre)falta.push("nombre");if(d.telefono.replace(/\D/g,"").length<8)falta.push("teléfono");if(!CORTO&&!serv.length)falta.push("servicio");if(!d.comuna)falta.push("comuna");if(!d.mensaje)falta.push("descripción del problema");
+  if(d.email&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email))falta.push("un correo válido");
+  if(falta.length){err.textContent="Por favor complete: "+falta.join(", ")+".";height();return}
+  var b=document.getElementById("go");b.disabled=true;b.textContent="Enviando…";
+  call("solicitud",[JSON.stringify(d)]).then(function(){
+    var pila=d.nombre.split(/\s+/)[0];
+    document.getElementById("box").innerHTML='<div class="done"><div class="ic">✓</div><h2>¡Gracias, '+pila.replace(/[<>&"]/g,"")+'!</h2><p>Recibimos su solicitud. Lo contactaremos dentro de las próximas 24 horas hábiles para coordinar la visita técnica.</p>'+(d.email?'<p>Le enviamos una confirmación a su correo.</p>':'')+'<a href="https://wa.me/56956069678" target="_blank" rel="noopener">¿Es urgente? Escríbanos por WhatsApp</a></div>';
+    try{parent.postMessage({dryco:"solicitud_enviada"},"*")}catch(e){}
+    if(CONV&&CONV.id&&window.gtag)gtag("event","conversion",{send_to:CONV.id+"/"+CONV.label});
+    height();
+  },function(x){b.disabled=false;b.textContent="Solicitar visita técnica y cotización";err.textContent="No pudimos enviar su solicitud. Inténtelo de nuevo o escríbanos por WhatsApp al +56 9 5606 9678.";height()})});
+</script></body></html>
