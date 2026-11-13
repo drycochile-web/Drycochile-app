@@ -72,7 +72,7 @@ document.getElementById("f").addEventListener("submit",function(e){e.preventDefa
   call("solicitud",[JSON.stringify(d)]).then(function(){
     var pila=d.nombre.split(/\s+/)[0];
     document.getElementById("box").innerHTML='<div class="done"><div class="ic">✓</div><h2>¡Gracias, '+pila.replace(/[<>&"]/g,"")+'!</h2><p>Recibimos su solicitud. Lo contactaremos dentro de las próximas 24 horas hábiles para coordinar la visita técnica.</p>'+(d.email?'<p>Le enviamos una confirmación a su correo.</p>':'')+'<a href="https://wa.me/56956069678" target="_blank" rel="noopener">¿Es urgente? Escríbanos por WhatsApp</a></div>';
-    try{parent.postMessage({dryco:"solicitud_enviada"},"*")}catch(e){}
+    try{parent.postMessage({dryco:"solicitud_enviada"},"*")}catch(e){}try{if(top!==parent)top.postMessage({dryco:"solicitud_enviada"},"*")}catch(e){}
     if(CONV&&CONV.id&&window.gtag)gtag("event","conversion",{send_to:CONV.id+"/"+CONV.label});
     height();
   },function(x){b.disabled=false;b.textContent="Solicitar visita técnica y cotización";err.textContent="No pudimos enviar su solicitud. Inténtelo de nuevo o escríbanos por WhatsApp al +56 9 5606 9678.";height()})});
