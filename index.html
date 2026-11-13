@@ -966,6 +966,7 @@ var LOGO_NAVY={w:720,h:204,b64:"/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAQDAwMDAgQDAwME
 /* ---------- generador PDF (vectorial, sin librerías) ---------- */
 var WAMAP={8364:128,8218:130,402:131,8222:132,8230:133,8224:134,8225:135,710:136,8240:137,352:138,8249:139,338:140,381:142,8216:145,8217:146,8220:147,8221:148,8226:149,8211:150,8212:151,732:152,8482:153,353:154,8250:155,339:156,382:158,376:159};
 function waCode(ch){var c=ch.charCodeAt(0);if(c>=32&&c<127)return c;if(c>=160&&c<=255)return c;if(WAMAP[c])return WAMAP[c];if(c===9)return 32;if(c===8722)return 45;return 63}
+function pdfU16(s){s=String(s==null?"":s);var h="<FEFF";for(var i=0;i<s.length;i++)h+=("000"+s.charCodeAt(i).toString(16).toUpperCase()).slice(-4);return h+">"}
 function pdfStr(s){var o="";s=String(s==null?"":s);for(var i=0;i<s.length;i++){var c=waCode(s[i]),ch=String.fromCharCode(c);o+=(ch==="("||ch===")"||ch==="\\")?"\\"+ch:ch}return "("+o+")"}
 function tw(s,f,sz,ls){s=String(s==null?"":s);var w=PDFW[f||"R"],t=0;for(var i=0;i<s.length;i++)t+=w[waCode(s[i])]||556;return t*sz/1000+(ls||0)*Math.max(0,s.length-1)}
 function wrapText(s,f,sz,max){var out=[];pdfNorm(s).split(/\n/).forEach(function(par){var words=par.split(/\s+/).filter(Boolean),line="";if(!words.length){out.push("");return}
@@ -997,12 +998,12 @@ PDFDoc.prototype.output=function(){
   var pageIds=[],cur=firstPage;this.pages.forEach(function(p){var o={page:cur++,content:cur++,annots:[]};p.links.forEach(function(){o.annots.push(cur++)});pageIds.push(o)});
   add("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
   function obj(id,body,stream){offs[id]=len;add(id+" 0 obj\n");if(stream){add(body);add("stream\n");add(stream);add("\nendstream\n")}else add(body+"\n");add("endobj\n")}
-  obj(1,"<< /Type /Catalog /Pages 2 0 R >>");
+  obj(1,"<< /Type /Catalog /Pages 2 0 R /ViewerPreferences << /DisplayDocTitle true >> >>");
   obj(2,"<< /Type /Pages /Kids ["+pageIds.map(function(o){return o.page+" 0 R"}).join(" ")+"] /Count "+pageIds.length+" >>");
   obj(3,"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
   obj(4,"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
   this.imgs.forEach(function(im,i){var b=im.bytes||(im.bytes=b64bytes(im.b64));obj(5+i,"<< /Type /XObject /Subtype /Image /Width "+im.w+" /Height "+im.h+" /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length "+b.length+" >>\n",b)});
-  obj(5+nImg,"<< /Title "+pdfStr(this.title)+" /Author (Dryco Chile SpA) /Creator (DrycoChile app) /Producer (DrycoChile app) >>");
+  obj(5+nImg,"<< /Title "+pdfU16(this.title)+" /Subject "+pdfU16(this.title)+" /Author (Dryco Chile SpA) /Creator (DrycoChile app) /Producer (DrycoChile app) >>");
   var xo="";for(var i=0;i<nImg;i++)xo+="/Im"+(i+1)+" "+(5+i)+" 0 R ";
   this.pages.forEach(function(p,i){var o=pageIds[i];var content=p.c.join("\n");
     obj(o.page,"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+self.W+" "+self.H+"] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>"+(nImg?" /XObject << "+xo+">>":"")+" >> /Contents "+o.content+" 0 R"+(o.annots.length?" /Annots ["+o.annots.map(function(a){return a+" 0 R"}).join(" ")+"]":"")+" >>");
@@ -1251,9 +1252,20 @@ function slug(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/
 function cotFileName(p){return "COT"+p.numero+"-"+String(p.fecha||today()).slice(0,4)+"_"+slug(p.proyecto||p.servicio||"cotizacion")+(p.cliente&&(p.cliente.empresa||p.cliente.nombre)?"_"+slug(p.cliente.empresa||p.cliente.nombre):"")+".pdf"}
 function savePdf(bytes,name){if(!downloads){toast("La descarga no está disponible aquí");return Promise.resolve(false)}
   return downloads.save({filename:name,data:new Blob([bytes],{type:"application/pdf"})}).then(function(){toast("PDF listo");return true},function(e){if(!(e&&(e.code==="dismissed"||e.code==="declined")))toast("No se pudo descargar el PDF");return false})}
-function fichaPDF(r,share){var pend=svFotos(r).some(function(f){var c=IMGC[f.src];return !c||!(c.bytes||c.err)});if(pend){toast("Preparando la ficha…");preloadSv(r).then(function(){fichaPDF(r,false)});return}
-  var bytes=buildFichaPDF(r),name="Ficha_tecnica_Dryco_Chile_"+slug(r.titulo||r.nombre)+".pdf";
-  if(share){try{var f=new File([bytes],name,{type:"application/pdf"});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:r.titulo||r.nombre}).catch(function(e){if(!e||e.name!=="AbortError")savePdf(bytes,name)});return}}catch(e){}}
+function pdfFileName(kind,title){var t=String(title||"").replace(/[\\/:*?"<>|#%{}~&]+/g," ").replace(/\s+/g," ").trim().slice(0,80);return (t?t+" - ":"")+kind+" Dryco Chile.pdf"}
+function sharePdfFile(bytes,name,title,text){var f;try{f=new File([bytes],name,{type:"application/pdf",lastModified:Date.now()})}catch(e){return savePdf(bytes,name)}
+  if(!(navigator.canShare&&navigator.canShare({files:[f]})))return savePdf(bytes,name);
+  var o={files:[f],title:title||name.replace(/\.pdf$/,"")};if(text)o.text=text;
+  return navigator.share(o).catch(function(e){if(e&&e.name==="AbortError")return;if(e&&e.name==="NotAllowedError"){pdfReady(bytes,name,title,text);return}savePdf(bytes,name)})}
+function pdfReady(bytes,name,title,text){var old=document.getElementById("pdfok");if(old)old.remove();var L=document.createElement("div");L.id="pdfok";L.className="actaw";L.style.alignItems="center";L.style.justifyContent="center";
+  L.innerHTML='<div class="aw" style="height:auto;margin:auto;border-radius:16px;max-width:420px"><div class="sh"><div><h2>PDF listo</h2><div class="mini">'+esc(name)+'</div></div><button class="x" data-pdfokx="1" aria-label="Cerrar">'+ic("x")+'</button></div>'+
+   '<div class="sf"><button class="btn" data-pdfokdl="1">'+ic("dl")+'Descargar</button><button class="btn pri" data-pdfokgo="1">'+ic("pdf")+'Compartir</button></div></div>';
+  L._pdf={bytes:bytes,name:name,title:title,text:text};document.body.appendChild(L)}
+document.addEventListener("click",function(e){var t=e.target.closest("[data-pdfokx],[data-pdfokgo],[data-pdfokdl]");if(!t)return;var L=document.getElementById("pdfok"),d=L&&L._pdf;if(L)L.remove();if(!d||t.dataset.pdfokx)return;
+  if(t.dataset.pdfokdl){savePdf(d.bytes,d.name);return}sharePdfFile(d.bytes,d.name,d.title,d.text)});
+function fichaPDF(r,share){var pend=svFotos(r).some(function(f){var c=IMGC[f.src];return !c||!(c.bytes||c.err)});if(pend){toast("Preparando la ficha…");preloadSv(r).then(function(){if(share){var b=buildFichaPDF(r),t=r.titulo||r.nombre;pdfReady(b,pdfFileName("Ficha técnica",t),t+" · Ficha técnica Dryco Chile")}else fichaPDF(r,false)});return}
+  var bytes=buildFichaPDF(r),t=r.titulo||r.nombre,name=pdfFileName("Ficha técnica",t);
+  if(share){sharePdfFile(bytes,name,t+" · Ficha técnica Dryco Chile");return}
   savePdf(bytes,name)}
 function qpGenerate(withPdf){
   var T=cotTotals(qp);
@@ -1563,7 +1575,7 @@ function svText(r,cliId){
 function gText(g,cliId){var c=byId("clientes",cliId),t="";if(c){var who=String(c.contacto||c.nombre||"").split("·")[0].trim().split(/\s+/)[0];t+="Hola"+(who?" "+who:"")+", "}else t+="Hola, ";
   t+="te comparto esta guía de Dryco Chile que explica tu caso:\n\n*"+g.titulo+"*\n";if(g.resumen)t+=g.resumen+"\n";return t+"\nLéela aquí: "+g.url+"\n\n"+FIRMA}
 function gWa(g,cliId){var c=byId("clientes",cliId),n="";if(c&&c.telefono){n=String(c.telefono).replace(/\D/g,"");if(n.length===9)n="56"+n}return "https://wa.me/"+n+"?text="+encodeURIComponent(gText(g,cliId))}
-function gActions(g,cli){return '<div class="row-actions"><button class="btn pri" data-gpdf="'+g.id+'">'+ic("pdf")+'Compartir PDF</button><button class="btn" data-gpdf="'+g.id+'" data-gmode="dl">'+ic("dl")+'Descargar PDF</button><a class="btn" data-gwa="'+g.id+'" href="'+esc(gWa(g,cli))+'" target="_blank" rel="noopener">'+ic("wa")+'Enlace por WhatsApp</a><button class="btn" data-gcopy="'+g.id+'">'+ic("copy")+'Copiar enlace</button></div>'}
+function gActions(g,cli){setTimeout(function(){var sv=guiaSv(g),f0=sv&&svFotos(sv)[0];if(f0)loadImg(f0.src)},0);return '<div class="row-actions"><button class="btn pri" data-gpdf="'+g.id+'">'+ic("pdf")+'Compartir PDF</button><button class="btn" data-gpdf="'+g.id+'" data-gmode="dl">'+ic("dl")+'Descargar PDF</button><a class="btn" data-gwa="'+g.id+'" href="'+esc(gWa(g,cli))+'" target="_blank" rel="noopener">'+ic("wa")+'Enlace por WhatsApp</a><button class="btn" data-gcopy="'+g.id+'">'+ic("copy")+'Copiar enlace</button></div>'}
 function guiasSorted(){return S.guias.slice().sort(function(a,b){return (SERV.indexOf(a.servicio)-SERV.indexOf(b.servicio))||String(a.titulo).localeCompare(String(b.titulo),"es")})}
 function guiasCard(){var G=guiasSorted();return '<div class="card"><div class="ch"><h3>Guías para compartir</h3><button class="btn add" data-new="guias">'+ic("plus")+'Agregar guía</button></div>'+(G.length?'<div class="glist">'+G.map(function(g){return '<div class="gi"><button class="gt" data-open="guias" data-id="'+g.id+'"><b>'+esc(g.titulo)+'</b><span class="mini">'+esc(g.servicio||"")+'</span></button>'+gActions(g,"")+'</div>'}).join("")+'</div>':'<div class="cb mini">Agrega las guías de drycochile.cl para enviarlas por WhatsApp con un toque.</div>')+'</div>'}
 function gCopy(g){var txt=g.url;function fb(){var ta=document.createElement("textarea");ta.value=txt;ta.style.cssText="position:fixed;top:0;left:0;opacity:0";document.body.appendChild(ta);ta.select();var ok=false;try{ok=document.execCommand("copy")}catch(e){}ta.remove();toast(ok?"Enlace copiado":"No se pudo copiar")}
@@ -1848,9 +1860,9 @@ function buildGuiaPDF(g){
   d.text(EMP.tel,W-M-18,y+40,{f:"B",sz:11,c:"#FFFFFF",align:"right",link:"https://wa.me/56956069678"});d.text(EMP.mail,W-M-18,y+56,{sz:9,c:PC.sky,align:"right",link:"mailto:"+EMP.mail});d.text(EMP.web,W-M-18,y+71,{sz:9,c:PC.sky,align:"right",link:"https://drycochile.cl"});
   y+=110;if(g.url){d.text("Versión web de esta guía: "+String(g.url).replace(/^https?:\/\//,""),M,y,{sz:8,c:PC.mut,link:g.url})}
   return d.output()}
-function guiaPDF(g,share){var sv=guiaSv(g),f0=sv&&svFotos(sv)[0];if(f0){var c=IMGC[f0.src];if(!c||!(c.bytes||c.err)){toast("Preparando la guía…");loadImg(f0.src).then(function(){guiaPDF(g,share)});return}}
-  var bytes=buildGuiaPDF(g),name="Guia_Dryco_Chile_"+slug(g.titulo)+".pdf";
-  if(share){try{var f=new File([bytes],name,{type:"application/pdf"});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:g.titulo}).catch(function(e){if(!e||e.name!=="AbortError")savePdf(bytes,name)});return}}catch(e){}}
+function guiaPDF(g,share){var sv=guiaSv(g),f0=sv&&svFotos(sv)[0];if(f0){var c=IMGC[f0.src];if(!c||!(c.bytes||c.err)){toast("Preparando la guía…");loadImg(f0.src).then(function(){if(share)pdfReady(buildGuiaPDF(g),pdfFileName("Guía técnica",g.titulo),g.titulo+" · Guía técnica Dryco Chile");else guiaPDF(g,false)});return}}
+  var bytes=buildGuiaPDF(g),name=pdfFileName("Guía técnica",g.titulo);
+  if(share){sharePdfFile(bytes,name,g.titulo+" · Guía técnica Dryco Chile");return}
   savePdf(bytes,name)}
 document.addEventListener("click",function(e){var t=e.target.closest("[data-gpdf]");if(!t)return;e.preventDefault();var g=byId("guias",t.dataset.gpdf);if(g)guiaPDF(g,t.dataset.gmode!=="dl")});
 
