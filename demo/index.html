@@ -54,7 +54,7 @@ html[data-rol]:not([data-rol="Administrador"]):not([data-rol=""]) .sum,html[data
 (function(){
 "use strict";
 var TK="dryco_demo_tok",TOK=null,USER=null,DATA=null,L={},readyRes=null,IMGP={},IMGU={};
-try{TOK=localStorage.getItem(TK)}catch(e){}
+TOK="T-demo";
 var ready=new Promise(function(r){readyRes=r});
 var EQR=["agenda","clientes","servicios","productos","ventas","tarjeta"];var ROUTES={"Equipo":EQR,"Solo lectura":EQR,"Ventas":EQR,"Terreno":EQR};
 window.__ROLE=null;
