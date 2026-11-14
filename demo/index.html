@@ -593,7 +593,7 @@ var SCH={
   {k:"comuna",l:"Comuna",t:"text"},
   {k:"direccion",l:"Dirección",t:"text",full:1},
   {k:"visitaPago",l:"Visita técnica pagada",t:"select",o:["No","Sí","Sin costo"],d:"No",hint:"Si el cliente pagó la visita técnica"},
-  {k:"visitaFecha",l:"Fecha de la visita",t:"date"},
+  {k:"visitaFecha",l:"Fecha de pago de la visita",t:"date",hint:"El IVA se suma a ese mes"},
   {k:"visitaMonto",l:"Monto de la visita (con IVA)",t:"money"},
   {k:"visitaDoc",l:"N° de factura o boleta de la visita",t:"text",hint:"Déjalo vacío hasta emitirla"},
   {k:"reach",l:"Recibe correos de Dryco",t:"select",o:["Sí","No"],d:"Sí",hint:"Para tu lista de Hostinger Reach. Elige No si el cliente no quiere recibir correos"},
@@ -631,7 +631,7 @@ var SCH={
  cobros:{label:"Cobros",one:"cobro",icon:"cobro",fields:[
   {k:"obraId",l:"Proyecto",t:"ref",ref:"obras",req:1,full:1},
   {k:"fecha",l:"Fecha",t:"date",d:"today"},
-  {k:"tipo",l:"Tipo",t:"select",o:["Anticipo","Estado de pago","Saldo final","Visita técnica"],d:"Anticipo"},
+  {k:"tipo",l:"Tipo",t:"select",o:["Anticipo","Estado de pago","Saldo final"],d:"Anticipo"},
   {k:"conIva",l:"Cobro",t:"select",o:["Con IVA","Sin IVA"],d:"Con IVA"},
   {k:"pct",l:"Porcentaje del proyecto (%)",t:"num",hint:"Calcula el monto sobre el valor neto del proyecto"},
   {k:"monto",l:"Monto recibido",t:"money",req:1},
@@ -1068,11 +1068,11 @@ function obraDocs(o){var c=o.cotizacionId?byId("cotizaciones",o.cotizacionId):nu
 function docsTxt(o){var d=obraDocs(o);return [d.cotTxt].concat(d.facs.map(function(x){return /^[A-Za-z]/.test(x)?x:"Fact. "+x})).filter(Boolean).join(" · ")}
 function docsChips(o){var d=obraDocs(o);return '<div class="row-actions docs" style="margin:6px 0 0">'+(d.cot?'<button class="pill" data-open="cotizaciones" data-id="'+esc(d.cot.id)+'">'+ic("pdf")+esc(d.cotTxt)+'</button>':'<span class="pill">Sin cotización asociada</span>')+(d.facs.length?d.facs.map(function(x){return '<span class="pill ok">'+(/^[A-Za-z]/.test(x)?"":"Factura ")+esc(x)+'</span>'}).join(""):'<span class="pill">Sin factura registrada</span>')+'</div>'}
 function ivaMes(ym){var L=function(a){return (a.fecha||"").slice(0,ym.length)===ym};
-  var cb=S.cobros.filter(L).filter(function(x){return cobIva(x,byId("obras",x.obraId))}),vs=S.ventas.filter(L).filter(function(v){return v.estado!=="Pendiente de pago"}),gs=S.gastos.filter(L).filter(function(x){return x.documento==="Factura"});
-  var dC=sum(cb,function(x){var m=+x.monto||0;return m-Math.round(m/(1+IVA))}),dV=sum(vs,function(v){var m=ventaTotal(v);return m-Math.round(m/(1+IVA))}),cr=sum(gs,gIva);
-  return {cb:cb,vs:vs,gs:gs,debCob:dC,debVen:dV,deb:dC+dV,cred:cr,pagar:dC+dV-cr}}
+  var cb=S.cobros.filter(L).filter(function(x){return cobIva(x,byId("obras",x.obraId))}),vs=S.ventas.filter(L).filter(function(v){return v.estado!=="Pendiente de pago"}),gs=S.gastos.filter(L).filter(function(x){return x.documento==="Factura"}),vt=S.clientes.filter(function(c){return c.visitaPago==="Sí"&&(+c.visitaMonto||0)>0&&(c.visitaFecha||"").slice(0,ym.length)===ym});
+  var dT=sum(vt,function(c){var m=+c.visitaMonto||0;return m-Math.round(m/(1+IVA))}),dC=sum(cb,function(x){var m=+x.monto||0;return m-Math.round(m/(1+IVA))}),dV=sum(vs,function(v){var m=ventaTotal(v);return m-Math.round(m/(1+IVA))}),cr=sum(gs,gIva);
+  return {cb:cb,vs:vs,gs:gs,vt:vt,debCob:dC,debVen:dV,debVis:dT,deb:dC+dV+dT,cred:cr,pagar:dC+dV+dT-cr}}
 function ivaPend(){var L=S.obras.filter(function(o){return o.conIva!=="No"&&obraCalc(o).porCobrar>0});return {obras:L,iva:sum(L,function(o){var p=obraCalc(o).porCobrar;return p-Math.round(p/(1+IVA))})}}
-function ivaCard(mo){var V=ivaMes(mo),P=ivaPend();return '<button class="card ivac" data-kpi="iva"><div class="ch"><h3>IVA acumulado de '+esc(mesLabel(mo,true).replace(/ de \d{4}$/,""))+' · F29</h3><span class="kgo" aria-hidden="true">›</span></div><div class="ivag"><div><span>IVA de cobros ('+((function(){var a=V.cb.filter(function(x){return x.tipo==="Anticipo"}).length,vt=V.cb.filter(function(x){return x.tipo==="Visita técnica"}).length,o=V.cb.length-a-vt;return [a?a+(a===1?" anticipo":" anticipos"):"",o?o+(o===1?" pago":" pagos"):"",vt?vt+(vt===1?" visita":" visitas"):""].filter(Boolean).join(" + ")+(V.vs.length?" + "+V.vs.length+" Acrimper":"")})()||"sin cobros")+')</span><b>'+money(V.deb)+'</b></div><div><span>IVA compras con factura ('+V.gs.length+')</span><b>− '+money(V.cred)+'</b></div><div class="'+(V.pagar<0?"ok":"")+'"><span>'+(V.pagar<0?"Remanente a favor":"IVA a pagar acumulado")+'</span><b>'+money(Math.abs(V.pagar))+'</b></div></div>'+'<div class="mini" style="padding:0 16px 14px">Cada pago con IVA (anticipos incluidos) se suma el día que entra y cada compra con factura se descuenta.'+(P.iva?' Aún por cobrar en proyectos aceptados: '+money(P.iva)+' de IVA.':'')+'</div>'+'</button>'}
+function ivaCard(mo){var V=ivaMes(mo),P=ivaPend();return '<button class="card ivac" data-kpi="iva"><div class="ch"><h3>IVA acumulado de '+esc(mesLabel(mo,true).replace(/ de \d{4}$/,""))+' · F29</h3><span class="kgo" aria-hidden="true">›</span></div><div class="ivag"><div><span>IVA de cobros ('+((function(){var a=V.cb.filter(function(x){return x.tipo==="Anticipo"}).length,vt=V.vt.length,o=V.cb.length-a;return [a?a+(a===1?" anticipo":" anticipos"):"",o?o+(o===1?" pago":" pagos"):"",vt?vt+(vt===1?" visita":" visitas"):""].filter(Boolean).join(" + ")+(V.vs.length?" + "+V.vs.length+" Acrimper":"")})()||"sin cobros")+')</span><b>'+money(V.deb)+'</b></div><div><span>IVA compras con factura ('+V.gs.length+')</span><b>− '+money(V.cred)+'</b></div><div class="'+(V.pagar<0?"ok":"")+'"><span>'+(V.pagar<0?"Remanente a favor":"IVA a pagar acumulado")+'</span><b>'+money(Math.abs(V.pagar))+'</b></div></div>'+'<div class="mini" style="padding:0 16px 14px">Cada pago con IVA (anticipos incluidos) se suma el día que entra y cada compra con factura se descuenta.'+(P.iva?' Aún por cobrar en proyectos aceptados: '+money(P.iva)+' de IVA.':'')+'</div>'+'</button>'}
 function tasaMes(ym){var L=S.cotizaciones.filter(function(c){return (c.fecha||"").slice(0,ym.length)===ym&&c.estado!=="Borrador"});
   var ac=L.filter(function(c){return c.estado==="Aceptada"}),re=L.filter(function(c){return c.estado==="Rechazada"}),en=L.filter(function(c){return c.estado==="Enviada"});
   return {ym:ym,todas:L,ac:ac,re:re,en:en,tasa:(ac.length+re.length)?Math.round(100*ac.length/(ac.length+re.length)):null}}
@@ -1135,14 +1135,14 @@ function vList(c){
   var s=SCH[c];var rows=S[c].slice();
   var qq=q.trim().toLowerCase();
   if(qq)rows=rows.filter(function(r){return qMatch(searchText(c,r),qq)});
-  var SEGS=["Todos","Clientes","Prospectos","Perdidos","Sin cotización"];
+  var SEGS=["Todos","Clientes","Prospectos","Perdidos","Sin cotización","Visita pagada"];function segOk(r,o){return o==="Visita pagada"?r.visitaPago==="Sí":cliSeg(r)===o}
   if(s.filter&&flt!=="Todos")rows=rows.filter(function(r){return (c==="solicitudes"?solEtapa(r):r[s.filter])===flt});
   if(c==="cotizaciones"&&flt==="Todos"&&!qq)rows=rows.filter(function(r){return r.estado!=="Rechazada"});
-  if(c==="clientes"&&SEGS.indexOf(flt)>0)rows=rows.filter(function(r){return cliSeg(r)===flt});
+  if(c==="clientes"&&SEGS.indexOf(flt)>0)rows=rows.filter(function(r){return segOk(r,flt)});
   rows.sort(sorter(c));
   var h=head(c,SUBS[c]);
   var opts=s.filter?s.fields.filter(function(f){return f.k===s.filter})[0].o:null;
-  h+='<div class="tools"><label class="search">'+ic("search")+'<input id="q" type="search" placeholder="'+esc(c==="materiales"?"Buscar por producto, marca, proveedor o uso":"Buscar en "+s.label.toLowerCase())+'" value="'+esc(q)+'" aria-label="Buscar"></label>'+(c==="clientes"?'<div class="chips">'+SEGS.map(function(o){var n=o==="Todos"?S.clientes.length:S.clientes.filter(function(r){return cliSeg(r)===o}).length;return '<button class="chip'+(flt===o?" on":"")+'" data-f="'+esc(o)+'">'+esc(o)+' · '+n+'</button>'}).join("")+'</div>':'')+(opts?'<div class="chips">'+["Todos"].concat(opts).map(function(o){var lb=c==="cotizaciones"&&o==="Todos"?"Activas":c==="cotizaciones"&&o==="Rechazada"?"Rechazadas · "+S.cotizaciones.filter(function(x){return x.estado==="Rechazada"}).length:o;return '<button class="chip'+(flt===o?" on":"")+'" data-f="'+esc(o)+'">'+esc(lb)+'</button>'}).join("")+'</div>':'')+'</div>';
+  h+='<div class="tools"><label class="search">'+ic("search")+'<input id="q" type="search" placeholder="'+esc(c==="materiales"?"Buscar por producto, marca, proveedor o uso":"Buscar en "+s.label.toLowerCase())+'" value="'+esc(q)+'" aria-label="Buscar"></label>'+(c==="clientes"?'<div class="chips">'+SEGS.map(function(o){var n=o==="Todos"?S.clientes.length:S.clientes.filter(function(r){return segOk(r,o)}).length;return '<button class="chip'+(flt===o?" on":"")+'" data-f="'+esc(o)+'">'+esc(o)+' · '+n+'</button>'}).join("")+'</div>':'')+(opts?'<div class="chips">'+["Todos"].concat(opts).map(function(o){var lb=c==="cotizaciones"&&o==="Todos"?"Activas":c==="cotizaciones"&&o==="Rechazada"?"Rechazadas · "+S.cotizaciones.filter(function(x){return x.estado==="Rechazada"}).length:o;return '<button class="chip'+(flt===o?" on":"")+'" data-f="'+esc(o)+'">'+esc(lb)+'</button>'}).join("")+'</div>':'')+'</div>';
   h+=summaryFor(c,rows);
   if(!S[c].length)return h+'<div class="card">'+emptyBox(EMPTY[c][0],EMPTY[c][1],c)+'</div>';
   if(!rows.length)return h+'<div class="card"><div class="empty"><b>Sin resultados</b>Prueba con otra búsqueda o filtro.</div></div>';
@@ -2296,6 +2296,7 @@ function kpiOpen(k,arg){var t=today(),mo=t.slice(0,7),h="",title="",sub="";
     function ivr(t,sub2,amt,open){return '<button class="it"'+(open?' data-open="'+open[0]+'" data-id="'+open[1]+'"':'')+'><span class="t">'+esc(t)+'</span><span class="m">'+esc(sub2)+'</span><span class="r"><span class="amt">'+money(amt)+'</span></span></button>'}
     h='<div class="sum"><div><span>IVA de ventas</span><b>'+money(V.deb)+'</b></div><div><span>IVA compras con factura</span><b>− '+money(V.cred)+'</b></div><div><span>'+(V.pagar<0?"Remanente a favor":"IVA a pagar")+'</span><b>'+money(Math.abs(V.pagar))+'</b></div></div>';
     h+=blk("Pagos con IVA recibidos: anticipos y saldos ("+V.cb.length+")",V.cb.map(function(x){var m=+x.monto||0;return ivr(nameOf("obras",x.obraId)||"Proyecto",fdate(x.fecha)+" · "+(x.tipo||"Cobro")+" · "+money(m)+" con IVA",m-Math.round(m/(1+IVA)),["obras",x.obraId])}),"Sin cobros con IVA este mes.",V.debCob?money(V.debCob):null);
+    if(V.vt.length)h+=blk("Visitas técnicas pagadas ("+V.vt.length+")",V.vt.map(function(c){var m=+c.visitaMonto||0;return ivr(c.nombre||"Cliente",fdate(c.visitaFecha)+" · "+money(m)+" con IVA · "+(c.visitaDoc?"Doc. "+c.visitaDoc:"falta documento"),m-Math.round(m/(1+IVA)),["clientes",c.id])}),"",money(V.debVis));
     if(V.vs.length)h+=blk("Ventas Acrimper ("+V.vs.length+")",V.vs.map(function(v){var m=ventaTotal(v);return ivr(v.comprador||"Venta",fdate(v.fecha)+" · "+(v.documento||"")+" · "+money(m),m-Math.round(m/(1+IVA)),["ventas",v.id])}),"",money(V.debVen));
     h+=blk("Compras con factura ("+V.gs.length+")",V.gs.map(function(x){return ivr(x.proveedor||x.descripcion||x.categoria||"Compra",fdate(x.fecha)+" · "+money(x.monto)+" con IVA"+(x.obraId?" · "+nameOf("obras",x.obraId):""),gIva(x),["gastos",x.id])}),"Sin compras con factura este mes. Marca “Factura” al registrar un gasto para descontar su IVA.",V.cred?money(V.cred):null);
     if(P.obras.length)h+=blk("IVA por cobrar en proyectos aceptados",P.obras.map(function(o){var p=obraCalc(o).porCobrar;return ivr(o.nombre,"Pendiente "+money(p)+" con IVA · "+o.estado,p-Math.round(p/(1+IVA)),["obras",o.id])}),"",money(P.iva));
