@@ -23,7 +23,7 @@ window.fetch=function(u,o){if(String(u).indexOf(EXEC_MARK)<0)return of.apply(thi
  return new Promise(function(r){setTimeout(function(){r(new Response(JSON.stringify(res)))},60)})};
 function demoToast(){if(typeof window.toast==="function")window.toast("Versión de prueba: los cambios no se guardan.");}
 window.__demoToast=demoToast;
-var BLOCK="[data-vissave],[data-f29],[data-f29del],[data-ivaadj],[data-cotdl],[data-pagopdf],[data-cobqpdf],[data-acqpdf],[data-xlsx],[data-csv],[data-basecli],[data-reach],[data-new],[data-edit],[data-del],[data-submit],[data-cobrar],[data-acta],[data-solnew],[data-segwa],[data-segllame],[data-segcerrar],[data-segpausa],[data-mantwa],[data-mantok],[data-mantno],[data-resena],[data-done],[data-setest],[data-mkobra],[data-ofup]";
+var BLOCK="[data-qcsave],[data-backup],[data-vissave],[data-f29],[data-f29del],[data-ivaadj],[data-cotdl],[data-pagopdf],[data-cobqpdf],[data-acqpdf],[data-xlsx],[data-csv],[data-basecli],[data-reach],[data-new],[data-edit],[data-del],[data-submit],[data-cobrar],[data-acta],[data-solnew],[data-segwa],[data-segllame],[data-segcerrar],[data-segpausa],[data-mantwa],[data-mantok],[data-mantno],[data-resena],[data-done],[data-setest],[data-mkobra],[data-ofup]";
 document.addEventListener("click",function(e){var t=e.target.closest&&e.target.closest(BLOCK);if(!t)return;e.preventDefault();e.stopImmediatePropagation();demoToast()},true);
 document.addEventListener("change",function(e){if(e.target&&e.target.type==="file"){e.preventDefault();e.stopImmediatePropagation();e.target.value="";demoToast()}},true);
 document.addEventListener("DOMContentLoaded",function(){var b=document.createElement("div");b.id="demobar";b.setAttribute("role","note");b.innerHTML="<b>Versión de prueba</b><span> · datos ficticios · sin montos · los cambios no se guardan</span>";document.body.appendChild(b)});
@@ -79,19 +79,33 @@ function maybeImport(){if(IMPDONE||!USER||USER.rol!=="Administrador")return;IMPD
     return p.then(function(){return run("put",TOK,"importaciones",j.lote,JSON.stringify({fecha:Date.now(),docs:(j.docs||[]).length,detalle:j.detalle||""}),false)})
       .then(function(){return load()}).then(function(){try{var t=document.createElement("div");t.textContent="Datos agregados: "+(j.detalle||j.lote);t.style.cssText="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));background:#0B1630;color:#fff;padding:10px 16px;border-radius:12px;z-index:150;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)";document.body.appendChild(t);setTimeout(function(){t.remove()},6000)}catch(e){}})
   }).catch(function(e){IMPDONE=false;console.warn("importar",e)})}
-function load(){if(!TOK||loading)return Promise.resolve();loading=true;return run("getAll",TOK).then(function(s){var r=JSON.parse(s);setUser(r.user);DATA=r.data;loading=false;Object.keys(L).forEach(emit);maybeImport()},function(e){loading=false;throw e})}
+var CK=TK+"_cache",QK=TK+"_q",Q=[],OFF=false,saveT=null;function qLoad(){try{Q=JSON.parse(localStorage.getItem(QK)||"[]")}catch(e){Q=[]}}
+function isNet(e){var m=String(e&&e.message||e);return m==="NET"||/Failed to fetch|NetworkError|Load failed|network/i.test(m)||(e&&e.name==="TypeError")}
+function cacheSave(){clearTimeout(saveT);saveT=setTimeout(function(){try{if(DATA&&USER)localStorage.setItem(CK,JSON.stringify({u:USER,d:DATA,t:Date.now()}))}catch(e){}},400)}
+function qSave(){try{localStorage.setItem(QK,JSON.stringify(Q))}catch(e){}netBar()}
+function netBar(){var b=document.getElementById("netbar");var n=Q.length;if(!OFF&&!n){if(b)b.remove();return}if(!b){b=document.createElement("div");b.id="netbar";b.setAttribute("role","status");b.style.cssText="position:fixed;left:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:140;background:#B45309;color:#fff;font:600 12.5px/1.3 system-ui,-apple-system,sans-serif;padding:7px 12px;border-radius:99px;box-shadow:0 6px 18px rgba(0,0,0,.25)";document.body.appendChild(b)}
+  b.textContent=OFF?"Sin señal"+(n?" · "+n+(n>1?" cambios guardados en el teléfono":" cambio guardado en el teléfono"):" · mostrando datos guardados"):"Sincronizando "+n+(n>1?" cambios…":" cambio…");b.style.background=OFF?"#B45309":"#1F5CA1"}
+function wr(fn,args){return run.apply(null,[fn].concat(args)).then(function(r){if(OFF){OFF=false;netBar()}return r},function(e){if(!isNet(e))throw e;OFF=true;Q.push({fn:fn,args:args});qSave();return null})}
+var flushing=false;function flush(){if(flushing||!Q.length||!TOK)return Promise.resolve();flushing=true;netBar();
+  var step=function(){if(!Q.length){flushing=false;OFF=false;qSave();return load()}var it=Q[0];var a=it.args.slice();a[0]=TOK;
+    return run.apply(null,[it.fn].concat(a)).then(function(){Q.shift();qSave();return step()},function(e){flushing=false;if(isNet(e)){OFF=true;netBar();return}Q.shift();qSave();console.warn("cambio descartado",e);return step()})};
+  return step()}
+window.addEventListener("online",function(){flush()});setInterval(function(){if(Q.length)flush()},45000);
+function fromCache(){try{var c=JSON.parse(localStorage.getItem(CK)||"null");if(c&&c.d&&c.u){setUser(c.u);DATA=c.d;Object.keys(L).forEach(emit);return true}}catch(x){}return false}
+function load(){if(!TOK||loading)return Promise.resolve();if(!DATA){qLoad();fromCache()}if(Q.length&&!flushing)return flush();loading=true;return run("getAll",TOK).then(function(s){var r=JSON.parse(s);setUser(r.user);DATA=r.data;loading=false;if(OFF){OFF=false}netBar();cacheSave();Object.keys(L).forEach(emit);maybeImport()},function(e){loading=false;
+  if(isNet(e)){OFF=true;netBar();if(DATA)return}throw e})}
 function nid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,9)}
-function setLocal(c,id,obj,merge){DATA=DATA||{};DATA[c]=DATA[c]||[];var i=-1;for(var k=0;k<DATA[c].length;k++)if(DATA[c][k].id===id){i=k;break}
+function setLocal(c,id,obj,merge){cacheSave();DATA=DATA||{};DATA[c]=DATA[c]||[];var i=-1;for(var k=0;k<DATA[c].length;k++)if(DATA[c][k].id===id){i=k;break}
   var v=merge&&i>=0?Object.assign({},DATA[c][i],obj):Object.assign({},obj);v.id=id;if(i>=0)DATA[c][i]=v;else DATA[c].push(v);emit(c)}
-function fail(e){console.error(e);load().catch(function(){});var err=new Error(msg(e));err.code=String(e&&e.message||"");throw err}
+function fail(e){console.error(e);if(!isNet(e))load().catch(function(){});var err=new Error(msg(e));err.code=String(e&&e.message||"");throw err}
 var db={
   collection:function(c){return {
     onSnapshot:function(cb){(L[c]=L[c]||[]).push(cb);if(DATA)setTimeout(function(){cb(snap(c))},0);return function(){}},
-    add:function(o){var id=nid();setLocal(c,id,o);return run("put",TOK,c,id,JSON.stringify(o),false).then(function(){return {id:id}},fail)}}},
+    add:function(o){var id=nid();setLocal(c,id,o);return wr("put",[TOK,c,id,JSON.stringify(o),false]).then(function(){return {id:id}},fail)}}},
   doc:function(p){var a=p.split("/"),c=a[0],id=a[1];return {
-    set:function(o){setLocal(c,id,o);return run("put",TOK,c,id,JSON.stringify(o),false).catch(fail)},
-    update:function(o){setLocal(c,id,o,true);return run("put",TOK,c,id,JSON.stringify(o),true).catch(fail)},
-    delete:function(){if(DATA&&DATA[c])DATA[c]=DATA[c].filter(function(x){return x.id!==id});emit(c);return run("del",TOK,c,id).catch(fail)}}}};
+    set:function(o){setLocal(c,id,o);return wr("put",[TOK,c,id,JSON.stringify(o),false]).catch(fail)},
+    update:function(o){setLocal(c,id,o,true);return wr("put",[TOK,c,id,JSON.stringify(o),true]).catch(fail)},
+    delete:function(){if(DATA&&DATA[c])DATA[c]=DATA[c].filter(function(x){return x.id!==id});emit(c);cacheSave();return wr("del",[TOK,c,id]).catch(fail)}}}};
 /* descargas: intenta descarga directa y además guarda en Drive (DrycoChile app / Documentos) */
 function b64(blob){return new Promise(function(res,rej){var fr=new FileReader();fr.onload=function(){res(String(fr.result).split(",")[1])};fr.onerror=rej;fr.readAsDataURL(blob)})}
 function bar(html){var b=document.getElementById("dlbar");if(!b){b=document.createElement("div");b.id="dlbar";document.body.appendChild(b)}b.innerHTML=html;b.hidden=false;var x=b.querySelector("[data-x]");if(x)x.onclick=function(){b.hidden=true}}
@@ -101,6 +115,7 @@ var downloads={save:function(o){var blob=o.data instanceof Blob?o.data:new Blob(
   return b64(blob).then(function(d){return run("saveFile",TOK,o.filename,d,blob.type||"application/octet-stream")}).then(function(url){
     bar('<span>Guardado en tu Drive</span><a href="'+esc(url)+'" target="_blank" rel="noopener">Abrir</a><button data-x="1" aria-label="Cerrar">×</button>');return true},
     function(e){bar('<span>No se pudo guardar el archivo en Drive.</span><button data-x="1">×</button>');throw e})}};
+window.__backupNow=function(){if(!DATA)return Promise.reject(new Error("Sin datos"));var t=new Date(),n="Respaldo app DrycoChile "+t.toISOString().slice(0,10)+" "+String(t.getHours()).padStart(2,"0")+"."+String(t.getMinutes()).padStart(2,"0")+".json";var blob=new Blob([JSON.stringify({app:"DrycoChile",fecha:t.toISOString(),datos:DATA})],{type:"application/json"});return b64(blob).then(function(d){return run("saveFile",TOK,n,d,"application/json")})};
 window.__saveDriveOnly=function(bytes,name){var blob=new Blob([bytes],{type:"application/pdf"});bar('<span>Guardando copia en tu Drive…</span>');
   return b64(blob).then(function(d){return run("saveFile",TOK,name,d,"application/pdf")}).then(function(url){bar('<span>Copia guardada en tu Drive</span><a href="'+esc(url)+'" target="_blank" rel="noopener">Abrir</a><button data-x="1" aria-label="Cerrar">×</button>')},function(){bar('<span>No se pudo guardar la copia en Drive.</span><button data-x="1">×</button>')})};
 /* imágenes de las fichas */
@@ -116,11 +131,12 @@ function who(){var s=document.querySelector(".side .sp");if(!s)return;var w=docu
   w.innerHTML=USER?'<span><b>'+esc(USER.nombre)+'</b>'+esc(USER.rol)+'</span><button type="button" data-logout="1">Salir</button>':"";
   var m=document.getElementById("mwho");if(m)m.innerHTML=USER?'<span>'+esc(USER.nombre)+' · '+esc(USER.rol)+'</span><button type="button" data-logout="1">Salir</button>':""}
 document.addEventListener("click",function(e){var t=e.target.closest&&e.target.closest("[data-logout]");if(t){logout(false)}});
-function logout(expired){try{localStorage.removeItem(TK)}catch(x){}TOK=null;USER=null;DATA=null;location.hash="";location.reload()}
+function logout(expired){try{localStorage.removeItem(TK);localStorage.removeItem(CK);localStorage.removeItem(QK)}catch(x){}TOK=null;USER=null;DATA=null;location.hash="";location.reload()}
 /* sección Usuarios (solo Administrador) */
 var RO=["Administrador","Equipo","Solo lectura"],RDESC={"Administrador":"Todo: montos, cotizaciones, proyectos, cobros, firmas y usuarios","Equipo":"Agenda, clientes, fichas, guías, informes de visita y venta de Acrimper. Sin montos de proyectos, costos ni firmas","Solo lectura":"Ve agenda, clientes, fichas, guías y Acrimper. No modifica nada","Ventas":"Igual que Equipo","Terreno":"Igual que Equipo"};
 var US=[];
-window.__vUsuarios=function(){setTimeout(usLoad,0);return '<div class="head"><div><h1>Usuarios</h1><p>Quién puede entrar a la app y qué puede ver</p></div><div class="row-actions"><button class="btn pri" data-us-new="1">Agregar usuario</button></div></div><div id="usform"></div><div class="card list" id="uslist"><div class="cb mini" style="padding-top:14px">Cargando…</div></div><div class="card" style="margin-top:12px"><div class="cb mini" style="padding-top:14px;line-height:1.6">'+RO.map(function(r){return '<b>'+r+':</b> '+RDESC[r]}).join("<br>")+'<br>Cada persona entra con su propio PIN. Si alguien deja de trabajar contigo, desactívalo y su acceso se corta de inmediato.</div></div>'};
+window.__vUsuarios=function(){setTimeout(usLoad,0);return '<div class="head"><div><h1>Usuarios</h1><p>Quién puede entrar a la app y qué puede ver</p></div><div class="row-actions"><button class="btn pri" data-us-new="1">Agregar usuario</button></div></div><div id="usform"></div><div class="card list" id="uslist"><div class="cb mini" style="padding-top:14px">Cargando…</div></div><div class="card" style="margin-top:12px"><div class="cb mini" style="padding-top:14px;line-height:1.6">'+RO.map(function(r){return '<b>'+r+':</b> '+RDESC[r]}).join("<br>")+'<br>Cada persona entra con su propio PIN. Si alguien deja de trabajar contigo, desactívalo y su acceso se corta de inmediato.</div></div>'+
+  '<div class="card" style="margin-top:12px"><div class="ch"><h3>Respaldo de datos</h3></div><div class="cb mini" style="line-height:1.6;max-width:none">Respaldo automático: <b>todos los domingos a las 22:00</b> se guarda una copia completa en tu Drive (carpeta <b>Respaldos</b>, se conservan las últimas 12).<br>Antes de un cambio grande puedes hacer una copia adicional ahora.<div class="row-actions" style="margin-top:10px"><button class="btn" data-backup="1">Respaldar ahora</button><span id="bkmsg"></span></div></div></div>'};
 function usLoad(){run("listUsers",TOK).then(function(s){US=JSON.parse(s);usList()},function(e){var l=document.getElementById("uslist");if(l)l.innerHTML='<div class="cb mini" style="padding-top:14px">'+esc(msg(e))+'</div>'})}
 function usList(){var l=document.getElementById("uslist");if(!l)return;l.innerHTML=US.map(function(u){return '<button class="it" data-us-edit="'+esc(u.id)+'"><span class="t">'+esc(u.nombre)+(USER&&u.id===USER.id?' (tú)':'')+'</span><span class="m">'+esc(u.rol)+'</span><span class="r">'+(u.activo?'<span class="pill ok">Activo</span>':'<span class="pill">Desactivado</span>')+'</span></button>'}).join("")}
 function usForm(u){var f=document.getElementById("usform");if(!f)return;var n=!u;u=u||{nombre:"",rol:"Equipo",activo:true};
@@ -131,6 +147,7 @@ function usForm(u){var f=document.getElementById("usform");if(!f)return;var n=!u
   '<div class="fld"><label for="us_a">Estado</label><select id="us_a"><option value="1"'+(u.activo?" selected":"")+'>Activo</option><option value="0"'+(!u.activo?" selected":"")+'>Desactivado</option></select></div>'+
   '</div><p class="mini" id="us_err" style="color:var(--bad)"></p><div class="row-actions">'+(!n&&!(USER&&u.id===USER.id)?'<button class="btn bad" data-us-del="'+esc(u.id)+'" style="margin-right:auto">Eliminar</button>':'')+'<button class="btn" data-us-cancel="1">Cancelar</button><button class="btn pri" data-us-save="'+esc(u.id||"")+'">Guardar</button></div></div></div>';
   document.getElementById("us_n").focus()}
+document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-backup]");if(b){var m=document.getElementById("bkmsg");b.disabled=true;if(m)m.textContent="Guardando…";window.__backupNow().then(function(u){b.disabled=false;if(m)m.innerHTML='Listo · <a href="'+esc(u)+'" target="_blank" rel="noopener">abrir en Drive</a>'},function(x){b.disabled=false;if(m)m.textContent=msg(x)});return}});
 document.addEventListener("click",function(e){var t=e.target.closest&&e.target.closest("[data-us-new],[data-us-edit],[data-us-cancel],[data-us-save],[data-us-del]");if(!t)return;
   if(t.dataset.usNew){usForm(null);return}
   if(t.dataset.usEdit){usForm(US.filter(function(x){return x.id===t.dataset.usEdit})[0]);return}
@@ -517,7 +534,10 @@ html[data-rol] #acrw .acqsum{display:grid!important}
 .segcard{margin:14px 0}
 .segit{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;padding:12px 16px;border-top:1px solid var(--line)}
 .segit .hb{flex:1 1 260px}.segit .row-actions{margin:0}
-.ofotos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.sum .ksub{display:block;text-transform:none;letter-spacing:0;font-size:12px;font-weight:400;color:var(--mut);font-style:normal;margin-top:2px}
+.cbrow{display:flex;align-items:center;gap:6px}.cbrow>.it{flex:1;min-width:0}.cbrow>.calb{margin-right:8px;flex:none}
+.qcl{display:grid;gap:8px;margin-top:10px}.qci{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface)}.qci.on{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 7%,var(--surface))}.qct{display:flex;gap:10px;align-items:flex-start;font-weight:600;cursor:pointer}.qct input{margin-top:3px;width:18px;height:18px;flex:none}.qcf{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 0 28px}.qcf input{border:1px solid var(--line);border-radius:9px;padding:7px 9px;background:var(--surface2);font:inherit;font-size:14px;min-width:0}@media (max-width:600px){.qcf{grid-template-columns:1fr}}
+.ofotos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 @media (max-width:600px){.ofotos{grid-template-columns:1fr}}
 .ofh{font-weight:600;font-size:13px;margin-bottom:6px}
 .ofg{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
@@ -859,8 +879,10 @@ function hoyCard(){var t=today(),m=addDays(t,1),adm=isAdm();
   var M=S.agenda.filter(function(a){return a.fecha===m&&!a.hecho}).sort(agSort);
   var ch=[];
   if(adm){var nSol=S.solicitudes.filter(function(x){return solEtapa(x)==="Nueva"}).length,nSeg=segDueList().length,nMan=mantList().length;
+    var nAnt=antList().filter(function(x){return x.dias>=2}).length;if(nAnt)ch.push('<a class="hchip warn" href="#" data-scroll="antcard">'+nAnt+(nAnt>1?" anticipos atrasados":" anticipo atrasado")+'</a>');
     if(nSol)ch.push('<a class="hchip warn" href="#solicitudes">'+nSol+(nSol>1?" solicitudes sin contestar":" solicitud sin contestar")+'</a>');
     if(nSeg)ch.push('<a class="hchip" href="#" data-scroll="segcard">'+nSeg+(nSeg>1?" cotizaciones por seguir":" cotización por seguir")+'</a>');
+    var nRes=resList().length;if(nRes)ch.push('<a class="hchip" href="#" data-scroll="rescard">'+nRes+(nRes>1?" reseñas por pedir":" reseña por pedir")+'</a>');
     if(nMan)ch.push('<a class="hchip" href="#" data-scroll="mantcard">'+nMan+(nMan>1?" mantenciones por ofrecer":" mantención por ofrecer")+'</a>')}
   if(atr)ch.push('<a class="hchip warn" href="#agenda">'+atr+(atr>1?" actividades atrasadas":" actividad atrasada")+'</a>');
   return '<div class="card hoycard"><div class="ch"><h3>Hoy · '+esc(fdate(t,true))+'</h3><span class="mini">'+(pend.length?pend.length+(pend.length>1?" pendientes":" pendiente"):A.length?"Todo hecho":"Nada agendado")+'</span></div>'+
@@ -868,6 +890,19 @@ function hoyCard(){var t=today(),m=addDays(t,1),adm=isAdm();
     (A.length?'<div>'+A.map(hoyRow).join("")+'</div>':'<div class="mini" style="padding:0 16px 12px">Nada agendado para hoy.</div>')+
     (M.length?'<div class="mini hman"><b>Mañana:</b> '+M.map(function(a){return esc((a.hora?a.hora+" · ":"")+(a.titulo||a.tipo||""))}).join(" &nbsp;·&nbsp; ")+'</div>':'')+'</div>'}
 
+/* ----- Anticipos por recibir: cotización aceptada o proyecto sin ningún pago ----- */
+function antList(){var t=today(),L=[],seen={};
+  S.cotizaciones.filter(function(c){return c.estado==="Aceptada"}).forEach(function(c){var ob=S.obras.filter(function(o){return o.cotizacionId===c.id})[0];if(ob){seen[ob.id]=1;if(obraCalc(ob).cobrado>0||ob.estado==="Terminada")return}
+    var q=c.pdf?qpFull(c.pdf):null,T=q?cotTotals(q):null,ap=T?T.ant:(ob?antPct(ob):60),m=T?T.p1:Math.round((+c.neto||0)*(1+IVA)*ap/100);if(ob)m=Math.round((+ob.neto||0)*(ob.conIva==="No"?1:1+IVA)*antPct(ob)/100);
+    var desde=String(c.aceptadaEl||c.aceptada||c.fecha||t).slice(0,10);L.push({cot:c,ob:ob,cli:c.clienteId,nombre:(ob&&ob.nombre)||(q&&q.proyecto)||c.servicio||("COT "+c.numero),pct:ob?antPct(ob):ap,monto:m,dias:Math.max(0,daysBetween(desde,t))})});
+  S.obras.filter(function(o){return !seen[o.id]&&o.estado!=="Terminada"&&+o.neto>0&&obraCalc(o).cobrado===0}).forEach(function(o){L.push({ob:o,cli:o.clienteId,nombre:o.nombre,pct:antPct(o),monto:Math.round((+o.neto||0)*(o.conIva==="No"?1:1+IVA)*antPct(o)/100),dias:Math.max(0,daysBetween(String(o.inicio||o.creado&&new Date(o.creado).toISOString()||t).slice(0,10),t))})});
+  return L.sort(function(a,b){return b.dias-a.dias})}
+function antText(x){return saludo(x.cli)+", ¿cómo estás? Te escribo para coordinar el inicio de *"+x.nombre+"*.\n\nPara reservar la fecha, el anticipo del "+x.pct+" % es de *"+money(x.monto)+"*:\nDryco Chile SpA · RUT "+EMP.rut+"\n"+EMP.banco+" · "+EMP.tipoCta+" "+EMP.cuenta+"\n"+EMP.mail+"\n\nEnvíame el comprobante por aquí y te confirmo la fecha de inicio. Muchas gracias.\n\n"+FIRMA}
+function antCard(){var L=antList();if(!L.length)return "";
+  return '<div class="card" id="antcard"><div class="ch"><h3>Anticipos por recibir · '+L.length+'</h3><span class="mini">'+money(sum(L,function(x){return x.monto}))+' en total</span></div><div>'+L.map(function(x){var urg=x.dias>=2;
+    return '<div class="hoyit"><div class="hh" style="color:'+(urg?"var(--warn)":"var(--mut)")+'">'+(x.dias?x.dias+" d":"Hoy")+'</div><button class="hb" data-open="'+(x.ob?"obras":"cotizaciones")+'" data-id="'+(x.ob?x.ob.id:x.cot.id)+'"><b>'+esc(x.nombre)+'</b><span class="mini">'+esc([nameOf("clientes",x.cli),"Anticipo "+x.pct+" % · "+money(x.monto),urg?"Aceptada hace "+x.dias+" días sin pago":""].filter(Boolean).join(" · "))+'</span></button><div class="ha">'+
+      '<a class="calb" href="'+esc(waTo(x.cli,antText(x)))+'" target="_blank" rel="noopener" title="Recordar el anticipo por WhatsApp" aria-label="Recordar el anticipo por WhatsApp">'+ic("wa")+'</a>'+
+      (x.ob?'<button class="calb" data-cobrar="'+x.ob.id+'" title="Registrar el anticipo" aria-label="Registrar el anticipo">'+ic("cobro")+'</button>':'<button class="calb" data-mkobra="'+x.cot.id+'" title="Crear el proyecto" aria-label="Crear el proyecto">'+ic("obra")+'</button>')+'</div></div>'}).join("")+'</div></div>'}
 /* ----- 1. Seguimiento de cotizaciones ----- */
 var SEG_DIAS=[3,7,14],SEG_N=["1er seguimiento","2° seguimiento","Último seguimiento"];
 function segN(c){return Math.min(3,+c.segN||0)}
@@ -908,6 +943,8 @@ function mantText(x){var o=x.o,s=saludo(o.clienteId),lugar=[o.direccion,o.comuna
   if(x.motivo==="aniv")return s+", le saluda Nicolás Vergara de Dryco Chile. Ya se cumple"+(x.y===1?" un año":"n "+x.y+" años")+" desde que terminamos la impermeabilización"+(lugar?" en "+lugar:"")+". Le ofrecemos una revisión preventiva para confirmar que todo siga en buen estado y detectar a tiempo cualquier detalle."+gar+" ¿Le acomoda que coordinemos una visita?";
   return s+", le saluda Nicolás Vergara de Dryco Chile. Se acerca la temporada de lluvias y es el mejor momento para revisar la impermeabilización"+(lugar?" en "+lugar:"")+". Le ofrecemos una revisión preventiva para que llegue al invierno sin sorpresas."+gar+" ¿Coordinamos una visita?"}
 function mantRow(x){var o=x.o;return '<div class="segit"><button class="hb" data-open="obras" data-id="'+o.id+'"><b>'+esc(o.nombre)+'</b><span class="mini">'+esc([nameOf("clientes",o.clienteId),x.txt,"terminado el "+fdate(o.termino)].filter(Boolean).join(" · "))+'</span></button><div class="row-actions"><a class="btn pri" data-mantwa="'+o.id+'" href="'+esc(waTo(o.clienteId,mantText(x)))+'" target="_blank" rel="noopener">'+ic("wa")+'Ofrecer revisión</a><button class="btn" data-mantok="'+o.id+'">Ya lo contacté</button><button class="btn" data-mantno="'+o.id+'" title="No volver a sugerir este proyecto">No ofrecer</button></div></div>'}
+function resList(){var t=today(),d=addDays(t,-60);return S.obras.filter(function(o){return o.estado==="Terminada"&&!o.resenaPedida&&(o.termino||"")>=d&&o.clienteId})}
+function resCard(){var L=resList();if(!L.length)return "";return '<div class="card" id="rescard"><div class="ch"><h3>Reseñas por pedir · '+L.length+'</h3><span class="mini">El mejor momento es el día de la entrega</span></div><div>'+L.map(function(o){return '<div class="hoyit"><div class="hh">'+esc(fdate(o.termino)||"")+'</div><button class="hb" data-open="obras" data-id="'+o.id+'"><b>'+esc(o.nombre)+'</b><span class="mini">'+esc(nameOf("clientes",o.clienteId)||"")+'</span></button><div class="ha"><a class="calb" data-resena="'+o.id+'" href="'+esc(resenaWa(o))+'" target="_blank" rel="noopener" title="Pedir reseña por WhatsApp" aria-label="Pedir reseña por WhatsApp">'+ic("wa")+'</a></div></div>'}).join("")+'</div></div>'}
 function mantCard(){var L=mantList();return '<div class="card" id="mantcard"><div class="ch"><h3>Mantenciones por ofrecer'+(L.length?' · '+L.length:'')+'</h3><span class="mini">Al año de terminado y antes de las lluvias</span></div>'+
   (L.length?'<div>'+L.slice(0,6).map(mantRow).join("")+'</div>'+(L.length>6?'<div class="mini" style="padding:8px 16px 12px">y '+(L.length-6)+' más</div>':''):'<div class="mini" style="padding:0 16px 14px">Nada por ofrecer ahora. Te aviso cuando un proyecto cumpla un año o se acerquen las lluvias (marzo a mayo).</div>')+'</div>'}
 function mantDetail(o){if(o.estado!=="Terminada")return "";var x=mantInfo(o);
@@ -962,8 +999,66 @@ document.addEventListener("change",function(e){if(e.target.dataset&&e.target.dat
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&FAC)facClose()});
 
 /* ----- 5. Fotos de obra ----- */
-var FETAPAS=["Antes","Durante","Después"];
+var FETAPAS=["Antes","Durante","Control de calidad","Después"];
 function obraFotos(id){return (S.fotos||[]).filter(function(f){return f.obraId===id}).sort(function(a,b){return (+a.creado||0)-(+b.creado||0)})}
+/* ---------- comprobante de transferencia en cada cobro ---------- */
+document.addEventListener("change",function(e){var t=e.target;if(!t.dataset||!t.dataset.compup)return;var f=t.files&&t.files[0],id=t.dataset.compup;t.value="";if(!f)return;
+  if(!window.__uploadPhoto||!db){toast("Para subir el comprobante abre la app instalada");return}
+  if(!/^image\//.test(f.type)){toast("Sube una foto o captura de pantalla del comprobante");return}
+  toast("Subiendo comprobante…");window.__uploadPhoto(f).then(function(src){patch("cobros",id,{comprobante:src,comprobanteFecha:today()});toast("Comprobante guardado")},function(er){toast((er&&er.message)||"No se pudo subir")})});
+document.addEventListener("click",function(e){var t=e.target.closest&&e.target.closest("[data-compver],[data-compx]");if(!t)return;
+  if(t.dataset.compx){var o=document.getElementById("compv");if(o)o.remove();return}
+  var r=byId("cobros",t.dataset.compver);if(!r||!r.comprobante)return;var L=document.createElement("div");L.id="compv";L.className="actaw";L.style.alignItems="center";L.style.justifyContent="center";
+  L.innerHTML='<div class="aw" style="height:auto;margin:auto;border-radius:16px;max-width:620px"><div class="sh"><div><h2>Comprobante</h2><div class="mini">'+esc([nameOf("obras",r.obraId),fdate(r.fecha),r.tipo,money(r.monto)].filter(Boolean).join(" · "))+'</div></div><button class="x" data-compx="1" aria-label="Cerrar">'+ic("x")+'</button></div><div style="background:#0B1630"><img data-src="'+esc(r.comprobante)+'" alt="Comprobante de transferencia" style="width:100%;max-height:70vh;object-fit:contain;display:block"></div><div class="sf"><button class="btn" data-compx="1">Cerrar</button></div></div>';
+  document.body.appendChild(L)});
+/* ---------- indicadores del negocio (últimos 12 meses) ---------- */
+function indData(){var t=today(),desde=addDays(t,-365);
+  var C=S.cotizaciones.filter(function(c){return (c.fecha||"")>=desde&&c.estado!=="Borrador"}),ac=C.filter(function(c){return c.estado==="Aceptada"}),re=C.filter(function(c){return c.estado==="Rechazada"});
+  var dias=ac.map(function(c){var ob=S.obras.filter(function(o){return o.cotizacionId===c.id})[0];var f=c.aceptadaEl?String(c.aceptadaEl).slice(0,10):(ob&&ob.creado?new Date(ob.creado).toISOString().slice(0,10):null);return f&&c.fecha?daysBetween(c.fecha,f):null}).filter(function(x){return x!=null&&x>=0&&x<180});
+  var O=S.obras.filter(function(o){return o.estado==="Terminada"&&(o.termino||o.inicio||"")>=desde&&+o.neto>0});
+  var porS={};O.forEach(function(o){var k=o.servicio||"Otro",c=obraCalc(o);var x=porS[k]=porS[k]||{s:k,n:0,neto:0,gan:0};x.n++;x.neto+=+o.neto||0;x.gan+=c.ganancia});
+  var srv=Object.keys(porS).map(function(k){var x=porS[k];x.mg=x.neto?x.gan/x.neto:0;return x}).sort(function(a,b){return b.gan-a.gan});
+  var bajos=O.map(function(o){return {o:o,mg:obraCalc(o).margen}}).filter(function(x){return x.mg<0.25}).sort(function(a,b){return a.mg-b.mg});
+  var netoT=sum(O,function(o){return o.neto}),ganT=sum(O,function(o){return obraCalc(o).ganancia});
+  var mot={};re.forEach(function(c){var m=c.motivo||"Sin motivo";mot[m]=(mot[m]||0)+1});
+  return {tasa:(ac.length+re.length)?ac.length/(ac.length+re.length):null,ac:ac.length,re:re.length,env:C.filter(function(c){return c.estado==="Enviada"}).length,dias:dias.length?Math.round(dias.reduce(function(a,b){return a+b},0)/dias.length):null,ticket:ac.length?sum(ac,function(c){return c.neto})/ac.length:null,mg:netoT?ganT/netoT:null,obras:O.length,srv:srv,bajos:bajos,mot:mot}}
+function indCard(){if(!isAdm())return "";var D=indData();function pc(x){return x==null?"—":Math.round(x*100)+" %"}
+  var h='<div class="card" id="indcard"><div class="ch"><h3>Indicadores del negocio</h3><span class="mini">Últimos 12 meses</span></div><div class="cb"><div class="sum" style="margin:0 0 10px">'+
+    '<div><span>Tasa de cierre</span><b>'+pc(D.tasa)+'</b><em class="ksub">'+D.ac+' aceptadas · '+D.re+' rechazadas</em></div>'+
+    '<div><span>Días hasta cerrar</span><b>'+(D.dias==null?"—":D.dias+" días")+'</b><em class="ksub">promedio desde la cotización</em></div>'+
+    '<div><span>Ticket promedio</span><b>'+(D.ticket==null?"—":money(D.ticket))+'</b><em class="ksub">neto por proyecto aceptado</em></div>'+
+    '<div><span>Margen real</span><b style="color:'+(D.mg!=null&&D.mg<0.25?"var(--warn)":"var(--ok)")+'">'+pc(D.mg)+'</b><em class="ksub">'+D.obras+' proyectos terminados</em></div></div>';
+  if(D.srv.length)h+='<div class="sec" style="margin-top:4px">Qué servicio deja más</div><div class="tscroll"><table class="mt"><thead><tr><th>Servicio</th><th class="n">Proyectos</th><th class="n">Venta neta</th><th class="n">Ganancia</th><th class="n">Margen</th></tr></thead><tbody>'+D.srv.map(function(x){return '<tr><td><b>'+esc(x.s)+'</b></td><td class="n">'+x.n+'</td><td class="n">'+money(x.neto)+'</td><td class="n">'+money(x.gan)+'</td><td class="n" style="color:'+(x.mg<0.25?"var(--warn)":"inherit")+'">'+pc(x.mg)+'</td></tr>'}).join("")+'</tbody></table></div>';
+  if(D.bajos.length)h+='<div class="sec">Proyectos con margen bajo (menos de 25 %)</div><div class="sublist list">'+D.bajos.slice(0,5).map(function(x){return '<button class="it" data-open="obras" data-id="'+x.o.id+'"><span class="t">'+esc(x.o.nombre)+'</span><span class="m">'+esc(x.o.servicio||"")+' · revisa materiales y días de trabajo</span><span class="r"><span class="pill warn">'+pc(x.mg)+'</span></span></button>'}).join("")+'</div>';
+  var mk=Object.keys(D.mot);if(mk.length)h+='<div class="mini" style="max-width:none;margin-top:8px"><b>Por qué se pierden:</b> '+mk.sort(function(a,b){return D.mot[b]-D.mot[a]}).map(function(k){return esc(k)+" ("+D.mot[k]+")"}).join(" · ")+'</div>';
+  return h+'</div></div>'}
+/* ---------- control de calidad por obra ---------- */
+var QC_TPL={"Membrana líquida":[["Soporte limpio, seco y sin material suelto","Humedad del soporte (%)"],["Fisuras, juntas y encuentros reparados",""],["Imprimante aplicado según ficha técnica","Producto / consumo"],["Refuerzo con geotextil en puntos críticos","Encuentros, desagües, pasadas"],["Primera mano de membrana","Consumo (kg/m²)"],["Segunda mano cruzada","Espesor seco total (mm)"],["Sellos en desagües, pasadas y perímetro",""],["Terminación con protección UV",""],["Prueba de estanqueidad sin filtraciones","Horas de inundación"],["Área limpia y entregada",""]],
+ "Fragüe epóxico":[["Retiro del fragüe antiguo a profundidad pareja","Profundidad (mm)"],["Juntas aspiradas, limpias y secas",""],["Baldosas sueltas o huecas reparadas","Cantidad"],["Fragüe epóxico aplicado en todas las juntas","Producto / color"],["Sello elástico perimetral y en encuentros",""],["Limpieza de residuos epóxicos",""],["Curado sin tránsito","Horas"],["Prueba de agua sin filtraciones",""],["Área limpia y entregada",""]],
+ "Revestimiento de piso":[["Preparación mecánica del soporte (desbaste o granallado)",""],["Humedad del soporte dentro de rango","Humedad (%)"],["Grietas y juntas tratadas",""],["Imprimante aplicado","Producto / consumo"],["Capa base aplicada","Espesor (mm)"],["Arena de cuarzo antideslizante (si corresponde)",""],["Capa de terminación aplicada",""],["Medias cañas y encuentros con muro",""],["Curado antes del tránsito","Horas"],["Área limpia y entregada",""]]};
+function qcTplFor(o){var t=(o.servicio||"")+" "+(o.nombre||"")+" "+(o.sistemaAplicado||"");if(/estacion|sala|piso|epóx|epox|rampa|ucrete|traffic/i.test(t))return "Revestimiento de piso";if(/fragüe|frague/i.test(t))return "Fragüe epóxico";return "Membrana líquida"}
+function qcItems(tpl){return (QC_TPL[tpl]||[]).map(function(x){return {t:x[0],u:x[1],ok:false,v:"",nota:""}})}
+function qcStat(o){var q=o.qc,it=q&&q.items||[];return {n:it.length,ok:it.filter(function(x){return x.ok}).length}}
+var QCS=null;
+function qcOpen(id){var o=byId("obras",id);if(!o)return;var q=o.qc&&o.qc.items?JSON.parse(JSON.stringify(o.qc)):{tpl:qcTplFor(o),items:qcItems(qcTplFor(o))};QCS={id:id,q:q};qcRender()}
+function qcRead(){var L=document.getElementById("qcw");if(!L||!QCS)return;QCS.q.items.forEach(function(it,i){var c=L.querySelector("#qc_ok_"+i),v=L.querySelector("#qc_v_"+i),n=L.querySelector("#qc_n_"+i);if(c)it.ok=c.checked;if(v)it.v=v.value;if(n)it.nota=n.value})}
+function qcRender(){var L=document.getElementById("qcw"),st=L?L.querySelector(".aw").scrollTop:0,o=byId("obras",QCS.id)||{},q=QCS.q;
+  if(!L){L=document.createElement("div");L.id="qcw";L.className="actaw";L.setAttribute("role","dialog");L.setAttribute("aria-modal","true");document.body.appendChild(L)}
+  var ok=q.items.filter(function(x){return x.ok}).length,nf=obraFotos(QCS.id).filter(function(f){return f.etapa==="Control de calidad"}).length;
+  var h='<div class="aw"><div class="sh"><div><h2>Control de calidad</h2><div class="mini">'+esc(o.nombre||"")+' · '+ok+' de '+q.items.length+' verificados</div></div><button class="x" data-qcx="1" aria-label="Cerrar">'+ic("x")+'</button></div><div class="sb">';
+  h+='<div class="fld" style="max-width:360px"><label for="qc_tpl">Sistema</label><select id="qc_tpl">'+Object.keys(QC_TPL).map(function(k){return '<option'+(k===q.tpl?" selected":"")+'>'+esc(k)+'</option>'}).join("")+'</select></div>';
+  h+='<div class="qcl">'+q.items.map(function(it,i){return '<div class="qci'+(it.ok?" on":"")+'"><label class="qct"><input type="checkbox" id="qc_ok_'+i+'"'+(it.ok?" checked":"")+'><span>'+esc(it.t)+'</span></label><div class="qcf">'+(it.u?'<input id="qc_v_'+i+'" value="'+esc(it.v||"")+'" placeholder="'+esc(it.u)+'" aria-label="'+esc(it.u)+'">':'')+'<input id="qc_n_'+i+'" value="'+esc(it.nota||"")+'" placeholder="Nota (opcional)" aria-label="Nota"></div></div>'}).join("")+'</div>';
+  h+='<div class="sec">Fotos de control <span class="mini" style="margin:0">'+(nf?nf+(nf>1?" fotos":" foto"):"Sin fotos aún")+'</span></div><label class="btn" style="display:inline-flex;gap:6px;align-items:center;cursor:pointer">'+ic("cam")+'Agregar fotos de control<input type="file" accept="image/*" multiple data-ofup="'+esc(QCS.id)+'" data-etapa="Control de calidad" hidden></label><p class="mini">Ej.: medidor de humedad, espesor con galga, prueba de inundación. Quedan en el registro fotográfico del proyecto.</p>';
+  h+='</div><div class="sf"><button class="btn" data-qcx="1">Cancelar</button><button class="btn pri" data-qcsave="1">Guardar</button></div></div>';
+  L.innerHTML=h;L.querySelector(".aw").scrollTop=st}
+document.addEventListener("click",function(e){var t=e.target.closest&&e.target.closest("[data-qcopen],[data-qcx],[data-qcsave]");if(!t)return;
+  if(t.dataset.qcopen){e.preventDefault();if(typeof closeSheet==="function"&&sheetState)closeSheet();qcOpen(t.dataset.qcopen);return}
+  if(t.dataset.qcx){var L=document.getElementById("qcw");if(L)L.remove();QCS=null;return}
+  if(t.dataset.qcsave){qcRead();var q=QCS.q,id=QCS.id;q.fecha=today();q.por=window.__USER_NOMBRE||"";patch("obras",id,{qc:q});var L2=document.getElementById("qcw");if(L2)L2.remove();QCS=null;toast("Control de calidad guardado");openDetail("obras",id);return}});
+document.addEventListener("change",function(e){if(!QCS)return;var t=e.target;if(t.id==="qc_tpl"){qcRead();var had=QCS.q.items.some(function(x){return x.ok||x.v||x.nota});if(had&&!confirm("Cambiar el sistema borra lo marcado. ¿Continuar?")){t.value=QCS.q.tpl;return}QCS.q={tpl:t.value,items:qcItems(t.value)};qcRender();return}
+  if(t.id&&t.id.indexOf("qc_ok_")===0){var row=t.closest(".qci");if(row)row.classList.toggle("on",t.checked);var L=document.getElementById("qcw"),n=L.querySelectorAll(".qci input[type=checkbox]:checked").length,m=L.querySelector(".sh .mini");if(m)m.textContent=m.textContent.replace(/\d+ de \d+ verificados/,n+" de "+QCS.q.items.length+" verificados")}});
+function qcSec(o){var S2=qcStat(o),q=o.qc;
+  return '<div class="sec">Control de calidad <button class="btn" data-qcopen="'+o.id+'">'+ic("check")+(S2.n?'Abrir':'Iniciar')+'</button></div>'+(S2.n?'<div class="row-actions"><span class="pill '+(S2.ok===S2.n?"ok":"warn")+'">'+S2.ok+' de '+S2.n+' verificados</span><span class="mini">'+esc(q.tpl||"")+(q.fecha?" · "+esc(fdate(q.fecha)):"")+'</span></div>'+'<div class="mini" style="max-width:none">'+q.items.filter(function(x){return x.ok}).map(function(x){return "✓ "+esc(x.t)+(x.v?" ("+esc((x.u?x.u+": ":"")+x.v)+")":"")}).join("<br>")+'</div>':'<div class="mini">Marca cada etapa a medida que avanza la obra. Queda en el acta de entrega y respalda la garantía.</div>')}
 function fotosSec(o){var F=obraFotos(o.id),canW=window.__ROLE!=="Solo lectura";
   return '<div class="sec">Registro fotográfico <span class="mini" style="margin:0">'+(F.length?F.length+(F.length===1?" foto":" fotos"):"Sin fotos aún")+'</span></div><div class="ofotos">'+FETAPAS.map(function(et){var L=F.filter(function(f){return (f.etapa||"Durante")===et});
     return '<div class="ofe"><div class="ofh">'+et+' <span class="mini">'+(L.length||"")+'</span></div><div class="ofg">'+L.map(function(f){return '<button class="oft" data-ofver="'+f.id+'" aria-label="Ver foto '+et.toLowerCase()+'"><img data-src="'+esc(f["src"])+'" alt=""></button>'}).join("")+
@@ -1024,6 +1119,7 @@ function vPanel(){
   var gasMes=sum(S.gastos.filter(function(g){return (g.fecha||"").slice(0,7)===mo}),gCost);
   var h='<div class="head"><div><h1>Panel</h1><p>'+esc(fdate(t,true))+'</p></div><div class="row-actions"><button class="btn" data-xlsx="all"'+(downloads?'':' hidden')+'>'+ic("dl")+'Descargar Excel</button><button class="btn" data-new="agenda">'+ic("agenda")+'Agendar</button><button class="btn pri add" data-new="cotizaciones">'+ic("plus")+'Nueva cotización</button></div></div>';
   h+=hoyCard();
+  h+=antCard();
   h+='<div class="kpis">'+
    kpi("Cotizado este mes",money(sum(cotMes,function(c){return c.neto})),cotMes.length+(cotMes.length===1?" cotización · neto":" cotizaciones · neto"),"cot")+
    (function(){var TM=tasaMes(mo),r=TM.ac.length+TM.re.length;return kpi("Aceptación "+mesLabel(mo,true).replace(/ de \d{4}$/,""),TM.tasa==null?"—":TM.tasa+" %",r?TM.ac.length+" de "+r+" respondidas"+(TM.en.length?" · "+TM.en.length+" esperando":""):(TM.en.length?TM.en.length+" esperando respuesta":"Sin cotizaciones respondidas"),"tasa")})()+
@@ -1036,12 +1132,13 @@ function vPanel(){
   // agenda next 7 days
   var up=S.agenda.filter(function(a){return !a.hecho&&a.fecha>=t&&a.fecha<=addDays(t,7)}).sort(agSort).slice(0,6);
   h+='<div class="card"><div class="ch"><h3>Próximos 7 días</h3><a class="mini" href="#agenda">Ver agenda</a></div>'+(up.length?'<div>'+up.map(function(a){return agRow(a,true)}).join("")+'</div>':emptyBox("Nada agendado esta semana","Agenda visitas técnicas e inicios de proyecto.","agenda"))+'</div></div>';
-  h+=tasaCard();
+  h+=tasaCard();h+=indCard();
   // proyectos activos, seguimientos, stock
   var seg=S.cotizaciones.filter(function(c){return c.estado==="Enviada"}).sort(function(a,b){return (a.seguimiento||a.fecha||"").localeCompare(b.seguimiento||b.fecha||"")}).slice(0,6);
   var low=S.materiales.filter(function(m){return (+m.minimo||0)>0&&(+m.stock||0)<=(+m.minimo||0)});
   h+='<div class="grid3">';
   h+='<div class="card"><div class="ch"><h3>Proyectos activos</h3><span class="mini">'+activas.length+'</span></div>'+(activas.length?'<div class="list">'+activas.slice(0,6).map(function(o){return '<button class="it" data-open="obras" data-id="'+o.id+'"><span class="t">'+esc(o.nombre)+'</span><span class="m">'+esc(nameOf("clientes",o.clienteId)||o.comuna||"")+'</span><span class="r">'+pillFor(o.estado)+'<span class="bar" title="Avance '+(+o.avance||0)+' %"><i style="width:'+Math.min(100,+o.avance||0)+'%"></i></span></span></button>'}).join("")+'</div>':emptyBox("Sin proyectos activos","Crea un proyecto desde una cotización aceptada.","obras"))+'</div>';
+  h+=resCard();
   h+=mantCard();
   h+='<div class="card"><div class="ch"><h3>Materiales</h3><a class="mini" href="#materiales">Inventario</a></div>'+(low.length?'<div class="list">'+low.map(function(m){return '<button class="it" data-open="materiales" data-id="'+m.id+'"><span class="t">'+esc(m.nombre)+'</span><span class="m">'+esc(m.marca||"")+'</span><span class="r"><span class="pill bad">'+num(m.stock)+' '+esc(m.unidad||"")+'</span><span class="sub">mín. '+num(m.minimo)+'</span></span></button>'}).join("")+'</div>':'<div class="cb mini">'+(S.materiales.length?"Ningún material bajo el stock mínimo. Gastos del mes: <b>"+money(gasMes)+"</b>.":"Registra tus productos y su stock mínimo para recibir avisos.")+'</div>')+'</div>';
   h+='</div>';
@@ -1068,7 +1165,7 @@ function emptyBox(t,s,c){return '<div class="empty"><b>'+esc(t)+'</b>'+esc(s)+(c
 function obraDocs(o){var c=o.cotizacionId?byId("cotizaciones",o.cotizacionId):null,f=[];S.cobros.forEach(function(x){if(x.obraId===o.id&&x.documento){String(x.documento).split(/[,;]/).forEach(function(d){d=d.trim();if(d&&f.indexOf(d)<0)f.push(d)})}});if(o.factura&&f.indexOf(o.factura)<0)f.unshift(o.factura);return {cot:c,cotTxt:c?"COT "+c.numero+(c.fecha?"/"+String(c.fecha).slice(0,4):""):"",facs:f}}
 function docsTxt(o){var d=obraDocs(o);return [d.cotTxt].concat(d.facs.map(function(x){return /^[A-Za-z]/.test(x)?x:"Fact. "+x})).filter(Boolean).join(" · ")}
 function docsChips(o){var d=obraDocs(o);return '<div class="row-actions docs" style="margin:6px 0 0">'+(d.cot?'<button class="pill" data-open="cotizaciones" data-id="'+esc(d.cot.id)+'">'+ic("pdf")+esc(d.cotTxt)+'</button>':'<span class="pill">Sin cotización asociada</span>')+(d.facs.length?d.facs.map(function(x){return '<span class="pill ok">'+(/^[A-Za-z]/.test(x)?"":"Factura ")+esc(x)+'</span>'}).join(""):'<span class="pill">Sin factura registrada</span>')+'</div>'}
-var IVA_INI="2026-10";
+var IVA_INI="2026-11";
 function ymAdd(ym,n){var y=+ym.slice(0,4),m=+ym.slice(5,7)-1+n;y+=Math.floor(m/12);m=((m%12)+12)%12;return y+"-"+(m<9?"0":"")+(m+1)}
 function ymLabel(ym){var l=mesLabel(ym,true);return ym.slice(0,4)===today().slice(0,4)?l.replace(/ de \d{4}$/,""):l}
 function ivaAdj(ym){var a=byId("config","iva");return a&&a.desde&&String(a.desde).slice(0,7)===ym?a:null}
@@ -1196,7 +1293,7 @@ function rowHTML(c,r){
   if(c==="clientes"){var nc=S.cotizaciones.filter(function(x){return x.clienteId===r.id}).length,no=S.obras.filter(function(x){return x.clienteId===r.id}).length;return o+'<span class="t">'+esc(r.nombre)+'</span><span class="m">'+esc([r.tipo,r.comuna,r.telefono].filter(Boolean).join(" · "))+'</span><span class="r">'+visPill(r)+'<span class="sub">'+nc+' cotiz. · '+no+' proyectos</span></span></button>'}
   if(c==="cotizaciones")return o+'<span class="t">COT '+esc(r.numero)+' · '+esc(nameOf("clientes",r.clienteId)||"Sin cliente")+'</span><span class="m">'+esc([fdate(r.fecha),r.servicio,r.m2?num(r.m2)+" m²":""].filter(Boolean).join(" · "))+'</span><span class="r"><span class="amt">'+money(r.neto)+'</span>'+pillFor(r.estado)+'</span></button>';
   if(c==="obras"){var k=obraCalc(r);return o+'<span class="t">'+esc(r.nombre)+'</span><span class="m">'+esc([docsTxt(r),nameOf("clientes",r.clienteId),r.comuna,r.inicio?"Inicio "+fdate(r.inicio):""].filter(Boolean).join(" · "))+'</span><span class="r"><span>'+pillFor(r.estado)+'</span><span class="sub">Ganancia '+money(k.ganancia)+(k.porCobrar?' · por cobrar '+money(k.porCobrar):'')+'</span></span></button>'}
-  if(c==="cobros")return o+'<span class="t">'+esc(nameOf("obras",r.obraId)||"Obra eliminada")+'</span><span class="m">'+esc([fdate(r.fecha),r.tipo+(+r.pct?" "+String(r.pct).replace(".",",")+" %":""),cobIva(r,byId("obras",r.obraId))?"":"sin IVA",r.medio,r.documento].filter(Boolean).join(" · "))+'</span><span class="r"><span class="amt">'+money(r.monto)+'</span></span></button>';
+  if(c==="cobros")return o+'<span class="t">'+esc(nameOf("obras",r.obraId)||"Obra eliminada")+'</span><span class="m">'+esc([fdate(r.fecha),r.tipo+(+r.pct?" "+String(r.pct).replace(".",",")+" %":""),cobIva(r,byId("obras",r.obraId))?"":"sin IVA",r.medio,r.documento,r.comprobante?"con comprobante":""].filter(Boolean).join(" · "))+'</span><span class="r"><span class="amt">'+money(r.monto)+'</span></span></button>';
   if(c==="gastos")return o+'<span class="t">'+esc(r.descripcion||r.categoria)+'</span><span class="m">'+esc([fdate(r.fecha),r.categoria,r.proveedor,nameOf("obras",r.obraId)].filter(Boolean).join(" · "))+'</span><span class="r"><span class="amt">'+money(r.monto)+'</span><span class="sub">'+esc(r.documento||"")+'</span></span></button>';
   if(c==="materiales"){var low=(+r.minimo||0)>0&&(+r.stock||0)<=(+r.minimo||0);return '<div class="it"><button style="all:unset;cursor:pointer;min-width:0;display:grid;gap:2px" data-open="materiales" data-id="'+r.id+'"><span class="t">'+esc(r.nombre)+'</span><span class="m">'+esc([r.marca,r.categoria,r.precio?money(r.precio)+" c/IVA / "+(r.unidad||"u"):"",r.rendimiento?"rinde "+num(r.rendimiento)+" "+(r.rendUnidad||"m²"):""].filter(Boolean).join(" · "))+'</span></button><span class="r"><span class="stockctl"><button data-stk="-1" data-id="'+r.id+'" aria-label="Restar uno">−</button><b class="amt'+(low?'" style="color:var(--bad)':'')+'">'+num(r.stock)+'</b><button data-stk="1" data-id="'+r.id+'" aria-label="Sumar uno">+</button></span><span class="sub">'+esc(r.unidad||"")+(r.minimo?' · mín. '+num(r.minimo):'')+'</span></span></div>'}
   if(c==="productos"){var mg=(+r.precioVenta||0)&&(+r.costo||0)?Math.round(100*((+r.precioVenta)-(+r.costo))/(+r.precioVenta))+" % margen":"";return '<div class="it"><button style="all:unset;cursor:pointer;min-width:0;display:grid;gap:2px" data-open="productos" data-id="'+r.id+'"><span class="t">'+esc(r.nombre)+'</span><span class="m">'+esc([r.presentacion,r.rendimiento,r.colores].filter(Boolean).join(" · "))+'</span></button><span class="r"><span class="amt">'+money(r.precioVenta)+'</span><span class="stockctl"><button data-pstk="-1" data-id="'+r.id+'" aria-label="Restar uno">−</button><b class="amt">'+num(r.stock)+'</b><button data-pstk="1" data-id="'+r.id+'" aria-label="Sumar uno">+</button></span><span class="sub">'+esc(mg||"en stock")+'</span></span></div>'}
@@ -1296,7 +1393,8 @@ function cotTotals(q){
   if(q.mo!==false)lines.push({t:"MANO DE OBRA Y GASTOS OPERACIONALES",d:q.moDesc||"Índice de remuneraciones de la mano de obra y supervisión. Se consideran los gastos generales y administrativos para la ejecución completa del proyecto, incluyendo imprevistos.",ud:q.moUd||"m2",cant:m2||"",precio:vm||"",total:Math.round(m2*vm),priced:!!(m2&&vm)});
   (q.extras||[]).forEach(function(e){var c=+e.cant||0,p=+e.precio||0;if(!e.t&&!c&&!p)return;lines.push({t:String(e.t||"ÍTEM ADICIONAL").toUpperCase(),d:e.d||"",ud:e.ud||"Ud",cant:c||"",precio:p||"",total:Math.round(c*p),priced:!!(c&&p)})});
   var sub=lines.reduce(function(a,l){return a+l.total},0),dto=Math.round(sub*(+q.dcto||0)/100),vd=q.visDtoOn&&+q.visDto>0?Math.min(Math.round(+q.visDto),sub-dto):0,neto=sub-dto-vd,iva=q.iva==="No"?0:Math.round(neto*0.19),total=neto+iva,ant=+q.anticipo>=0&&q.anticipo!==""&&q.anticipo!=null?+q.anticipo:60;
-  return {lines:lines,sub:sub,dto:dto,vd:vd,neto:neto,iva:iva,total:total,ant:ant,p1:Math.round(total*ant/100),p2:total-Math.round(total*ant/100),vm2:m2?neto/m2:0};
+  var A2=null;if(q.alt&&q.alt.on&&+q.alt.valorM2>0&&m2){var as=Math.round(m2*(+q.alt.valorM2)),ad=Math.round(as*(+q.dcto||0)/100),an=Math.max(0,as-ad-vd),ai=q.iva==="No"?0:Math.round(an*0.19),at=an+ai;A2={titulo:q.alt.titulo||"Alternativa",desc:q.alt.desc||"",neto:an,iva:ai,total:at,p1:Math.round(at*ant/100),p2:at-Math.round(at*ant/100),vm2:+q.alt.valorM2}}
+  return {alt:A2,lines:lines,sub:sub,dto:dto,vd:vd,neto:neto,iva:iva,total:total,ant:ant,p1:Math.round(total*ant/100),p2:total-Math.round(total*ant/100),vm2:m2?neto/m2:0};
 }
 function buildCotPDF(q){
   var T=cotTotals(q),d=new PDFDoc("Cotización "+q.numero+" / "+String(q.fecha||"").slice(0,4)+" · Dryco Chile"),W=d.W,H=d.H,M=36,CW=W-2*M,y=0,num=q.numero+" / "+String(q.fecha||"").slice(0,4);
@@ -1375,6 +1473,13 @@ function buildCotPDF(q){
   // observaciones
   if(q.observaciones){var ol=wrapText(q.observaciones,"R",8.3,CW);need(30+Math.min(ol.length,6)*11.6);secTitle("OBSERVACIONES DEL PROCEDIMIENTO");
     ol.forEach(function(s){need(12);d.text(s,M,y,{sz:8.3,c:PC.ink});y+=11.6});y+=10}
+  if(T.alt){var A2=T.alt,ow=(CW-12)/2,dl2=wrapText(A2.desc,"R",8,ow-24).slice(0,5),oh=96+dl2.length*10.4;need(oh+40);secTitle("DOS OPCIONES PARA SU DECISIÓN");
+    [[ "OPCIÓN A · DETALLADA ARRIBA",q.proyecto||q.servicio||"Proyecto",[],T.total,T.p1,false],["OPCIÓN B",A2.titulo,dl2,A2.total,A2.p1,true]].forEach(function(op,ix){var ox=M+ix*(ow+12);d.rrect(ox,y,ow,oh,8,op[5]?PC.navy:PC.soft,op[5]?null:PC.line,0.6);
+      d.text(op[0],ox+12,y+16,{f:"B",sz:7,c:op[5]?PC.cyan:PC.acc,ls:1.2});var tl2=wrapText(op[1],"B",9.6,ow-24).slice(0,2),yy=y+31;tl2.forEach(function(s2){d.text(s2,ox+12,yy,{f:"B",sz:9.6,c:op[5]?"#FFFFFF":PC.navy});yy+=12});
+      op[2].forEach(function(s2){d.text(s2,ox+12,yy,{sz:8,c:op[5]?PC.sky:PC.mut});yy+=10.4});
+      d.text("Total"+(q.iva==="No"?"":" con IVA"),ox+12,y+oh-30,{sz:7.8,c:op[5]?PC.sky:PC.mut});d.text(clp(op[3]),ox+ow-12,y+oh-28,{f:"B",sz:13,c:op[5]?"#FFFFFF":PC.navy,align:"right"});
+      d.text("Anticipo "+T.ant+" %: "+clp(op[4]),ox+ow-12,y+oh-13,{sz:7.8,c:op[5]?PC.sky:PC.mut,align:"right"})});
+    y+=oh+10;d.text("Indique la opción elegida al aceptar. Las condiciones comerciales son las mismas para ambas.",M,y,{sz:7.8,c:PC.mut});y+=18}
   // condiciones + banco
   var cond="Proyecto a concluir en un plazo máximo de "+(q.plazo||"—")+". Al aceptar la cotización se considera el pago del "+T.ant+" % por concepto de materialidad y el "+(100-T.ant)+" % restante el día de recepción de las labores y/o término de faena. "+(q.garantia?"El proyecto cuenta con garantía de "+q.garantia+" meses desde su entrega y no aplica para catástrofes intencionales, naturales o causas desconocidas.":"La garantía se detalla según el sistema aplicado.")+(q.condExtra?" "+q.condExtra:"");
   var bkw=200,cw2=CW-bkw-18,cl=wrapText(cond,"R",8.1,cw2),hasAnt=T.ant>0,bxH=hasAnt?172:136;var blockH=Math.max(cl.length*11+22,bxH);
@@ -1497,6 +1602,8 @@ function qpSet(el,isChange){var path=el.dataset.qp,last=path.split(".").pop(),v;
   if(path==="numero")qp._numEdited=true;
   qpSetPath(path,v);
   if(el.type==="checkbox"){var row=el.closest(".qpit");if(row)row.classList.toggle("off",!v)}
+  if((path==="alt.on"||path==="diagOn"||path==="validez")&&isChange){render();return}
+  if(isChange&&path.indexOf("alt.")===0){render();return}
   if(path==="iva"&&isChange){}
   qpUpdate()}
 function qpUpdate(){var o=document.getElementById("qpsum");if(o)o.innerHTML=qpSum();var b=document.getElementById("qpbt");if(b)b.textContent=money(cotTotals(qp).total)}
@@ -1525,6 +1632,8 @@ function vCotPdf(){qpInit();if(!qp.cotId&&!qp._numEdited){var nx=nextCot();if(nx
   h+='<div class="sec" style="margin-top:12px">Ítems adicionales con precio <button class="btn" data-qpadd="extra">'+ic("plus")+'Agregar</button></div>';
   h+=qp.extras.map(function(e,i){return '<div class="qpx"><input class="xt" data-qp="extras.'+i+'.t" placeholder="Descripción (ej: Canaleta)" value="'+esc(e.t||"")+'" aria-label="Descripción"><select data-qp="extras.'+i+'.ud" aria-label="Unidad">'+["ml","m2","Ud","Gl"].map(function(u){return '<option'+(u===e.ud?" selected":"")+'>'+u+'</option>'}).join("")+'</select><input data-qp="extras.'+i+'.cant" inputmode="decimal" placeholder="Cant." value="'+esc(e.cant)+'" aria-label="Cantidad"><input data-qp="extras.'+i+'.precio" inputmode="numeric" placeholder="$ unitario" value="'+esc(e.precio===""?"":Math.round(+e.precio).toLocaleString("es-CL"))+'" aria-label="Precio unitario neto"><button type="button" data-qpx="'+i+'" aria-label="Quitar">'+ic("x")+'</button></div>'}).join("");
   h+='</div></div>';
+  qp.alt=qp.alt||{on:false,titulo:"",desc:"",valorM2:""};var TA=cotTotals(qp).alt;
+  h+='<div class="card"><div class="ch"><h3>Segunda opción</h3><label class="mini" style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" data-qp="alt.on"'+(qp.alt.on?" checked":"")+'> Ofrecer dos opciones</label></div><div class="cb">'+(qp.alt.on?'<div class="form">'+qi("alt.titulo","Nombre de la opción B",{ph:"Ej: Fragüe epóxico sin demoler",full:1})+qi("alt.valorM2","Valor neto por m² de la opción B",{num:1,money:1,hint:"Mismos m² de la opción A"})+qi("alt.desc","Qué incluye y en qué se diferencia",{area:1,full:1,rows:3})+'</div>'+(TA?'<p class="mini" style="margin:8px 0 0">Opción B: total '+money(TA.total)+' · anticipo '+money(TA.p1)+'</p>':''):'<p class="mini" style="margin:0">Dar a elegir entre una opción base y una recomendada ayuda a que el cliente decida <i>cuál</i>, en vez de <i>si</i> contrata.</p>')+'</div></div>';
   h+='<div class="card"><div class="ch"><h3>Condiciones y textos</h3></div><div class="cb"><div class="form">'+qi("plazo","Plazo de entrega",{ph:"Ej: 5 días hábiles"})+qi("garantia","Garantía (meses)",{num:1})+qi("anticipo","Anticipo al aceptar (%)",{num:1})+qi("pago","Medio de pago")+
     qi("observaciones","Observaciones del procedimiento",{area:1,full:1,rows:6})+qi("beneficios","Beneficios del sistema (uno por línea)",{area:1,full:1,rows:5})+qi("nota","Nota bajo los beneficios",{area:1,full:1,rows:2})+'</div></div></div>';
   h+='</div><div class="card qpsum" style="position:sticky;top:12px"><div class="ch"><h3>Resumen</h3><span class="mini">COT '+esc(qp.numero)+'</span></div><div class="cb"><div id="qpsum">'+qpSum()+'</div><div class="btns"><button class="btn pri" data-qpgo="pdf">'+ic("pdf")+'Generar PDF y guardar</button><button class="btn" data-qpgo="save">Solo guardar cotización</button></div><p class="mini" style="margin:10px 0 0">Se guarda en Cotizaciones como "Enviada", con seguimiento en 3 días. Puedes volver a descargar el PDF desde la cotización.</p></div></div></div>';
@@ -1648,7 +1757,8 @@ function cobroCheck(id,data){var o=byId("obras",data.obraId);if(!o)return "";var
 function obraFinaliza(oid,fecha){var o=byId("obras",oid);if(!o||o.estado==="Terminada")return;var f=fecha||today();
   patch("obras",oid,{estado:"Terminada",avance:100,termino:o.termino&&o.termino<=f?o.termino:f});
   S.agenda.filter(function(a){return a.obraId===oid&&!a.hecho&&(a.fecha||"")<=f}).forEach(function(a){patch("agenda",a.id,{hecho:true})});
-  setTimeout(function(){toast("Pago final registrado: el proyecto quedó terminado")},400)}
+  var aid="ag-rev-"+oid;if(db&&!byId("agenda",aid)){var dir=[o.direccion,o.comuna].filter(Boolean).join(", ");db.doc("agenda/"+aid).set({titulo:"Revisión preventiva anual · "+(o.nombre||""),tipo:"Visita técnica",fecha:addMonths(f,12),hora:null,clienteId:o.clienteId||null,obraId:oid,direccion:dir||null,notas:"Agendada sola al terminar el proyecto. Revisar el sistema y ofrecer mantención.",hecho:false,creado:Date.now()})}
+  setTimeout(function(){toast("Proyecto terminado · pide la reseña hoy y la revisión anual quedó agendada")},400)}
 document.addEventListener("click",function(e){var t=e.target.closest("[data-solest]");if(!t)return;e.preventDefault();patch("solicitudes",t.dataset.id,{estado:t.dataset.solest});toast("Etapa: "+t.dataset.solest)});
 function solCanal(r){return r.canal||"Web"}
 function solEtapa(r){var man=r.estado==="Atendida"?"En contacto":(r.estado||"Nueva");if(man==="Descartada"||man==="Perdida")return man;
@@ -1744,10 +1854,11 @@ function detailHTML(c,r){
     sb+='<dl class="kv">'+kv("Servicio",r.servicio)+kv("Superficie",r.m2?num(r.m2)+" m²":"")+kv("Dirección",[r.direccion,r.comuna].filter(Boolean).join(", "))+kv("Inicio",fdate(r.inicio))+kv("Término",fdate(r.termino))+kv("Garantía",r.garantia?r.garantia+" meses"+(garVence(r)?" · vence "+fdate(garVence(r)):""):"")+kv("Cotización",nameOf("cotizaciones",r.cotizacionId))+kv("Equipo",(r.equipo||[]).map(function(x){return nameOf("equipo",x)}).filter(Boolean).join(", "))+kv("Notas",r.notas)+'</dl>';
     var cb=S.cobros.filter(function(x){return x.obraId===r.id}).sort(function(a,b){return (b.fecha||"").localeCompare(a.fecha||"")});
     var gs=S.gastos.filter(function(x){return x.obraId===r.id}).sort(function(a,b){return (b.fecha||"").localeCompare(a.fecha||"")});
+    sb+=qcSec(r);
     sb+=fotosSec(r);
     sb+='<div class="sec">Entrega y garantía <button class="btn pri" data-acta="'+r.id+'">'+ic("pdf")+'Acta y garantía</button></div>'+(r.estado==="Terminada"?'<div class="row-actions"><a class="btn" data-resena="'+r.id+'" href="'+esc(resenaWa(r))+'" target="_blank" rel="noopener">'+ic("wa")+(r.resenaPedida?'Reseña pedida el '+esc(fdate(r.resenaPedida))+' · volver a pedir':'Pedir reseña en Google')+'</a></div>':'')+'<div class="mini" style="max-width:none">'+(r.actaFecha?(r.actaTipo==="garantia"?"Certificado de garantía":"Acta de entrega y certificado de garantía")+" emitido el "+esc(fdate(r.actaFecha))+(garVence(r)?" · garantía vigente hasta el "+esc(fdate(garVence(r))):""):"Genera el acta de entrega con fotos y firma del cliente, o solo el certificado de garantía.")+'</div>'+mantDetail(r);
     var ci=cobroInfo(r);
-    sb+='<div class="sec">Cobros <span class="row-actions" style="margin:0">'+(isAdm()?'<button class="btn" data-fac="obra:'+r.id+'">'+ic("fac")+'Facturar</button>':'')+(ci.pagada?'':'<button class="btn" data-new="cobros" data-preset-obra="'+r.id+'">'+ic("plus")+'Registrar cobro</button>')+'</span></div><div class="row-actions">'+(ci.pagada?'<span class="pill ok">Proyecto pagado</span><button class="btn" data-pagopdf="'+r.id+'">'+ic("pdf")+'Comprobante PDF</button><button class="btn" data-pagopdf="'+r.id+'" data-mode="dl">'+ic("dl")+'Descargar</button>':'<button class="btn pri" data-cobrar="'+r.id+'">'+ic("wa")+'Cobrar · estado de pago</button><span class="mini" style="align-self:center">Pendiente '+money(ci.k.porCobrar)+'</span>')+'</div>'+(cb.length?'<div class="sublist list">'+cb.map(function(x){return rowHTML("cobros",x)}).join("")+'</div>':'<div class="mini">Sin cobros registrados.</div>');
+    sb+='<div class="sec">Cobros <span class="row-actions" style="margin:0">'+(isAdm()?'<button class="btn" data-fac="obra:'+r.id+'">'+ic("fac")+'Facturar</button>':'')+(ci.pagada?'':'<button class="btn" data-new="cobros" data-preset-obra="'+r.id+'">'+ic("plus")+'Registrar cobro</button>')+'</span></div><div class="row-actions">'+(ci.pagada?'<span class="pill ok">Proyecto pagado</span><button class="btn" data-pagopdf="'+r.id+'">'+ic("pdf")+'Comprobante PDF</button><button class="btn" data-pagopdf="'+r.id+'" data-mode="dl">'+ic("dl")+'Descargar</button>':'<button class="btn pri" data-cobrar="'+r.id+'">'+ic("wa")+'Cobrar · estado de pago</button><span class="mini" style="align-self:center">Pendiente '+money(ci.k.porCobrar)+'</span>')+'</div>'+(cb.length?'<div class="sublist list">'+cb.map(function(x){return '<div class="cbrow">'+rowHTML("cobros",x)+(x.comprobante?'<button class="calb" data-compver="'+x.id+'" title="Ver comprobante" aria-label="Ver comprobante" style="color:var(--ok)">'+ic("eye")+'</button>':(window.__ROLE!=="Solo lectura"?'<label class="calb" title="Adjuntar comprobante de transferencia" aria-label="Adjuntar comprobante">'+ic("cam")+'<input type="file" accept="image/*,application/pdf" data-compup="'+x.id+'" hidden></label>':''))+'</div>'}).join("")+'</div>':'<div class="mini">Sin cobros registrados.</div>');
     sb+='<div class="sec">Gastos del proyecto <button class="btn" data-new="gastos" data-preset-obra="'+r.id+'">'+ic("plus")+'Registrar gasto</button></div>'+(gs.length?'<div class="sublist list">'+gs.map(function(x){return rowHTML("gastos",x)}).join("")+'</div>':'<div class="mini">Sin gastos registrados.</div>');
   }else if(c==="cotizaciones"){
     var ob=S.obras.filter(function(o){return o.cotizacionId===r.id})[0];
@@ -2056,6 +2167,8 @@ function buildActaPDF(A){
     kvgrid([["Cliente",cli.nombre||A.recibe],["RUT",cli.rut||A.rut],["Dirección",dir],["Proyecto",o.nombre],["Servicio",o.servicio],["Superficie",A.m2?String(A.m2).replace(".",",")+" m²":""],["Cotización",cot.numero?"N° "+cot.numero:""],["Fecha de entrega",actaLongDate(A.fecha)],["Inicio de los trabajos",o.inicio?actaLongDate(o.inicio):""],["Garantía",A.meses+" meses · hasta el "+actaLongDate(vence)]]);
     y+=4;sec("TRABAJO REALIZADO");para(A.trabajo);
     if(String(A.sistema||"").trim()){sec("SISTEMA Y PRODUCTOS APLICADOS");para(A.sistema)}
+    var QI=(o.qc&&o.qc.items||[]).filter(function(x){return x.ok});
+    if(QI.length){sec("CONTROL DE CALIDAD · "+QI.length+" DE "+o.qc.items.length+" PUNTOS VERIFICADOS");QI.forEach(function(x){var ls=wrapText(x.t+(x.v?" · "+(x.u?x.u+": ":"")+x.v:"")+(x.nota?" · "+x.nota:""),"R",9.2,CW-18);if(y+ls.length*12.4+4>BOT)cont("Acta de entrega · control de calidad");d.check(M+1,y-3,PC.blue);ls.forEach(function(s2){d.text(s2,M+15,y,{sz:9.2,c:PC.ink});y+=12.4});y+=3});y+=6}
     if(String(A.obs||"").trim()){sec("OBSERVACIONES");para(A.obs)}
     var ft=A.fotos.filter(function(f){return f&&f.img});
     if(ft.length){var cols=ft.length===1?1:ft.length===2||ft.length===4?2:3,gw=(CW-(cols-1)*10)/cols,gh=Math.round(gw*(cols===1?0.56:0.72));
@@ -2079,7 +2192,7 @@ function buildActaPDF(A){
   d.text("Vigente desde el "+actaLongDate(A.fecha),W-M-18,y+42,{f:"B",sz:10,c:"#FFFFFF",align:"right"});d.text("hasta el "+actaLongDate(vence),W-M-18,y+58,{f:"B",sz:10,c:"#FFFFFF",align:"right"});
   d.text(o.servicio?"Servicio: "+o.servicio:"",W-M-18,y+76,{sz:8.4,c:PC.sky,align:"right"});y+=118;
   para(EMP.razon.replace("SPA","SpA")+", RUT "+EMP.rut+", certifica que los trabajos de impermeabilización realizados para "+(A.recibe||cli.nombre||"el cliente")+(A.rut?", RUT "+A.rut:"")+(dir?", en "+dir:"")+(cot.numero?", según cotización N° "+cot.numero:"")+", cuentan con garantía de "+A.meses+" meses a contar del "+actaLongDate(A.fecha)+".",10.2);
-  y+=2;sec("TRABAJO GARANTIZADO");para(A.trabajo+(A.m2?" Superficie: "+String(A.m2).replace(".",",")+" m².":""));
+  y+=2;sec("TRABAJO GARANTIZADO");var QS=qcStat(o);para(A.trabajo+(A.m2?" Superficie: "+String(A.m2).replace(".",",")+" m².":"")+(QS.ok?" Ejecutado con control de calidad documentado: "+QS.ok+" de "+QS.n+" puntos verificados.":""));
   if(String(A.sistema||"").trim()){sec("SISTEMA APLICADO");para(A.sistema)}
   sec("COBERTURA Y CONDICIONES");
   String(A.cond||"").split(/\n+/).map(function(s){return s.trim()}).filter(Boolean).forEach(function(p){var ls=wrapText(p,"R",9.2,CW-16);if(y+ls.length*13>BOT)cont("Certificado de garantía");d.circle(M+3.4,y-3.1,2.4,PC.blue);ls.forEach(function(s){d.text(s,M+14,y,{sz:9.2,c:PC.ink});y+=13});y+=6});
@@ -2203,8 +2316,9 @@ function aceptaUrl(c){return location.origin+"/c/#"+c.token}
 function cotMsg(q,c){var T=cotTotals(q),cid=(c&&c.clienteId)||q.clienteId,num=q.numero+"/"+String(q.fecha||today()).slice(0,4);
   var t=saludo(cid)+", te envío la cotización N° "+num+" de Dryco Chile"+(q.proyecto?" para *"+q.proyecto+"*":"")+".\n\n";
   if(c)t+="Puedes revisarla y aceptarla en línea aquí:\n"+aceptaUrl(c)+"\n\n";
-  t+="*Total: "+money(T.total)+(q.iva==="No"?" (sin IVA)":" IVA incluido")+"*"+(T.vd?" (ya descontada la visita técnica)":"")+(cotVence(q)>=today()?"\nPrecio válido hasta el "+actaLongDate(cotVence(q))+".":"")+"\n\n";
-  if(T.ant>0)t+="*Para activar el proyecto*, transfiere el anticipo del "+T.ant+" %: *"+money(T.p1)+"*\n"+"Dryco Chile SpA · RUT "+EMP.rut+"\n"+EMP.banco+" · "+EMP.tipoCta+" "+EMP.cuenta+"\n"+EMP.mail+"\n\nCon el comprobante agendamos la fecha de inicio. El "+(100-T.ant)+" % restante ("+money(T.p2)+") se paga el día de la entrega, con el trabajo recibido conforme.\n\n";
+  if(T.alt)t+="*Opción A* · "+(q.proyecto||"detallada en la cotización")+": *"+money(T.total)+"*\n*Opción B* · "+T.alt.titulo+": *"+money(T.alt.total)+"*\n(IVA incluido. Al aceptar, indica la opción en el comentario.)"+(cotVence(q)>=today()?"\nPrecios válidos hasta el "+actaLongDate(cotVence(q))+".":"")+"\n\n";
+  else t+="*Total: "+money(T.total)+(q.iva==="No"?" (sin IVA)":" IVA incluido")+"*"+(T.vd?" (ya descontada la visita técnica)":"")+(cotVence(q)>=today()?"\nPrecio válido hasta el "+actaLongDate(cotVence(q))+".":"")+"\n\n";
+  if(T.ant>0)t+="*Para activar el proyecto*, transfiere el anticipo del "+T.ant+" %"+(T.alt?" de la opción elegida: A *"+money(T.p1)+"* · B *"+money(T.alt.p1)+"*":": *"+money(T.p1)+"*")+"\n"+"Dryco Chile SpA · RUT "+EMP.rut+"\n"+EMP.banco+" · "+EMP.tipoCta+" "+EMP.cuenta+"\n"+EMP.mail+"\n\nCon el comprobante agendamos la fecha de inicio. El "+(100-T.ant)+" % restante"+(T.alt?"":" ("+money(T.p2)+")")+" se paga el día de la entrega, con el trabajo recibido conforme.\n\n";
   return t+"Cualquier duda, quedo atento.\n\n"+FIRMA}
 function aceptaText(c){return cotMsg(c.pdf?qpFull(c.pdf):{numero:c.numero,fecha:c.fecha,clienteId:c.clienteId,items:[],mo:false,extras:[{t:"Total",cant:1,precio:+c.neto||0}],anticipo:60,validez:7},c)}
 function visPill(r){if(r.visitaPago==="Sí")return r.visitaDoc?'<span class="pill ok">Visita pagada · Doc. '+esc(r.visitaDoc)+'</span>':'<span class="pill warn">Visita pagada · falta documento</span>';if(r.visitaPago==="Sin costo")return '<span class="pill acc">Visita sin costo</span>';return ""}
