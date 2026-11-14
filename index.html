@@ -1100,7 +1100,7 @@ var SUBS={solicitudes:"Todo lo que llega: web, WhatsApp, llamadas, correo, Insta
 function vList(c){
   var s=SCH[c];var rows=S[c].slice();
   var qq=q.trim().toLowerCase();
-  if(qq)rows=rows.filter(function(r){return searchText(c,r).indexOf(qq)>=0});
+  if(qq)rows=rows.filter(function(r){return qMatch(searchText(c,r),qq)});
   var SEGS=["Todos","Clientes","Prospectos","Perdidos","Sin cotización"];
   if(s.filter&&flt!=="Todos")rows=rows.filter(function(r){return (c==="solicitudes"?solEtapa(r):r[s.filter])===flt});
   if(c==="cotizaciones"&&flt==="Todos"&&!qq)rows=rows.filter(function(r){return r.estado!=="Rechazada"});
@@ -1108,13 +1108,15 @@ function vList(c){
   rows.sort(sorter(c));
   var h=head(c,SUBS[c]);
   var opts=s.filter?s.fields.filter(function(f){return f.k===s.filter})[0].o:null;
-  h+='<div class="tools"><label class="search">'+ic("search")+'<input id="q" type="search" placeholder="Buscar en '+esc(s.label.toLowerCase())+'" value="'+esc(q)+'" aria-label="Buscar"></label>'+(c==="clientes"?'<div class="chips">'+SEGS.map(function(o){var n=o==="Todos"?S.clientes.length:S.clientes.filter(function(r){return cliSeg(r)===o}).length;return '<button class="chip'+(flt===o?" on":"")+'" data-f="'+esc(o)+'">'+esc(o)+' · '+n+'</button>'}).join("")+'</div>':'')+(opts?'<div class="chips">'+["Todos"].concat(opts).map(function(o){var lb=c==="cotizaciones"&&o==="Todos"?"Activas":c==="cotizaciones"&&o==="Rechazada"?"Rechazadas · "+S.cotizaciones.filter(function(x){return x.estado==="Rechazada"}).length:o;return '<button class="chip'+(flt===o?" on":"")+'" data-f="'+esc(o)+'">'+esc(lb)+'</button>'}).join("")+'</div>':'')+'</div>';
+  h+='<div class="tools"><label class="search">'+ic("search")+'<input id="q" type="search" placeholder="'+esc(c==="materiales"?"Buscar por producto, marca, proveedor o uso":"Buscar en "+s.label.toLowerCase())+'" value="'+esc(q)+'" aria-label="Buscar"></label>'+(c==="clientes"?'<div class="chips">'+SEGS.map(function(o){var n=o==="Todos"?S.clientes.length:S.clientes.filter(function(r){return cliSeg(r)===o}).length;return '<button class="chip'+(flt===o?" on":"")+'" data-f="'+esc(o)+'">'+esc(o)+' · '+n+'</button>'}).join("")+'</div>':'')+(opts?'<div class="chips">'+["Todos"].concat(opts).map(function(o){var lb=c==="cotizaciones"&&o==="Todos"?"Activas":c==="cotizaciones"&&o==="Rechazada"?"Rechazadas · "+S.cotizaciones.filter(function(x){return x.estado==="Rechazada"}).length:o;return '<button class="chip'+(flt===o?" on":"")+'" data-f="'+esc(o)+'">'+esc(lb)+'</button>'}).join("")+'</div>':'')+'</div>';
   h+=summaryFor(c,rows);
   if(!S[c].length)return h+'<div class="card">'+emptyBox(EMPTY[c][0],EMPTY[c][1],c)+'</div>';
   if(!rows.length)return h+'<div class="card"><div class="empty"><b>Sin resultados</b>Prueba con otra búsqueda o filtro.</div></div>';
   return h+'<div class="card list">'+rows.map(function(r){return rowHTML(c,r)}).join("")+'</div>'+(c==="servicios"&&!qq?guiasCard():'');
 }
 var EMPTY={solicitudes:["Aún no hay solicitudes","Las del formulario web llegan solas. Las de WhatsApp, llamadas o correo regístralas con «Registrar solicitud»."],guias:["Aún no hay guías","Agrega las guías de tu sitio para enviarlas por WhatsApp."],plantillas:["Aún no hay plantillas","Crea una plantilla con los ítems de cada sistema."],servicios:["Aún no hay servicios","Agrega la ficha de cada servicio para compartirla con tus clientes."],productos:["Aún no hay productos","Agrega la ficha de cada producto que vendes."],ventas:["Aún no hay ventas","Registra cada venta con su producto, cantidad y comprador."],clientes:["Aún no hay clientes","Registra a quién le cotizas para ver su historial de cotizaciones y proyectos."],cotizaciones:["Aún no hay cotizaciones","Registra cada presupuesto que envías y sigue su estado hasta que se acepte."],obras:["Aún no hay proyectos","Crea un proyecto al aceptarse una cotización para llevar avance, cobros y gastos."],cobros:["Aún no hay cobros","Registra anticipos y pagos para saber cuánto falta por cobrar."],gastos:["Aún no hay gastos","Anota compras de materiales, mano de obra y otros costos."],materiales:["Aún no hay materiales","Agrega tus productos con su stock mínimo."],equipo:["Aún no hay personas","Agrega a tu equipo para asignarlo a los proyectos."]};
+function norm(x){return String(x==null?"":x).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")}
+function qMatch(txt,qq){var t=norm(txt);return norm(qq).split(/\s+/).filter(Boolean).every(function(w){return t.indexOf(w)>=0})}
 function searchText(c,r){var parts=[];SCH[c].fields.forEach(function(f){var v=r[f.k];if(f.t==="ref")v=nameOf(f.ref,v);if(f.t==="multi")v=(v||[]).map(function(x){return nameOf(f.ref,x)}).join(" ");parts.push(v)});return parts.join(" ").toLowerCase()}
 function sorter(c){
   if(c==="cotizaciones")return function(a,b){return (b.fecha||"").localeCompare(a.fecha||"")||String(b.numero).localeCompare(String(a.numero),undefined,{numeric:true})};
@@ -1804,7 +1806,7 @@ function addMonths(s,n){var d=pdate(s);d.setMonth(d.getMonth()+(+n||0));return i
 
 /* ---------- cotizador ---------- */
 var CZD={sistema:SIST[0],m2:100,ml:40,tec:2,dias:5,perd:0,pet:100000,men:150000,pm2:45000,mo:50000,margen:40,servicio:"Cubiertas"};
-var cz=null,czTouched=false;
+var cz=null,czTouched=false,czq="";
 function czInit(){var cfg=byId("config","cotizador");if(!cz||(!czTouched&&cfg&&!cz._cfg)){cz=Object.assign({},CZD,cfg?clean(cfg):{});cz._cfg=!!cfg;if(!cz.sel)cz.sel={}}}
 function czMats(){return S.materiales.filter(function(m){return (+m.rendimiento||0)>0&&((m.sistema||"General")==="General"||m.sistema===cz.sistema)}).sort(function(a,b){var o=["Selladores","Imprimantes","Membranas","Geotextil y refuerzos","Terminaciones"];return (o.indexOf(a.categoria)+9)%9-(o.indexOf(b.categoria)+9)%9||String(a.nombre).localeCompare(String(b.nombre),"es")})}
 function czOn(m){return cz.sel[m.id]!==undefined?cz.sel[m.id]:((+m.precio||0)>0&&!m.noCotizar)}
@@ -1824,10 +1826,11 @@ function vCotizador(){czInit();
   '</div></div>';
   var c=czCalc();
   h+='<div class="ch" style="padding-top:4px"><h3>Materiales del sistema</h3><a class="mini" href="#materiales">Editar precios y rendimientos</a></div><div class="cb" style="padding-bottom:8px"><div class="fld" style="max-width:340px"><label for="cz_sistema">Sistema</label><select id="cz_sistema" data-cz="sistema">'+SIST.filter(function(x){return x!=="General"}).map(function(x){return '<option'+(x===cz.sistema?" selected":"")+'>'+esc(x)+'</option>'}).join("")+'</select></div></div>';
+  h+=c.rows.length>5?'<div class="cb" style="padding-top:0;padding-bottom:8px"><label class="search" style="max-width:340px">'+ic("search")+'<input id="czq" type="search" placeholder="Buscar material" value="'+esc(czq)+'" aria-label="Buscar material del cotizador"></label></div>':'';
   h+=c.rows.length?'<div class="tscroll" id="czmat">'+czTable(c)+'</div>':'<div class="cb mini">Agrega materiales con su precio y rendimiento para que el cotizador los calcule.</div>';
   h+='</div><div class="card" style="position:sticky;top:12px"><div class="ch"><h3>Resultado</h3><span class="mini" id="czm2">'+num(cz.m2)+' m²</span></div><div class="cb" id="czout">'+czRes(c)+'</div></div></div>';
   return h}
-function czTable(c){return '<table class="mt"><thead><tr><th>Usar</th><th>Producto</th><th class="n">Necesario</th><th class="n">Compra</th><th class="n">Costo neto</th></tr></thead><tbody>'+c.rows.map(function(r){var m=r.m;return '<tr class="'+(r.on?"":"off")+'"><td><input type="checkbox" data-czm="'+m.id+'" aria-label="Usar '+esc(m.nombre)+'"'+(r.on?" checked":"")+'></td><td><b>'+esc(m.nombre)+'</b><div class="mini">'+((+m.precio||0)>0?money(m.precio)+' c/IVA':'<span class="pill warn">Falta precio</span>')+' · rinde '+num(m.rendimiento)+' '+esc(m.rendUnidad||"m²")+'</div></td><td class="n">'+num(Math.round(r.base*10)/10)+' '+esc(m.rendUnidad||"m²")+'</td><td class="n">'+r.u+' '+esc(m.unidad||"u")+'</td><td class="n">'+money(r.neto)+'</td></tr>'}).join("")+'</tbody></table>'}
+function czTable(c){var rr=czq.trim()?c.rows.filter(function(r){var m=r.m;return qMatch([m.nombre,m.marca,m.categoria,m.proveedor,m.notas].join(" "),czq)}):c.rows;if(!rr.length)return '<div class="cb mini">Ningún material coincide con «'+esc(czq)+'». Los materiales marcados igual se suman al costo.</div>';return '<table class="mt"><thead><tr><th>Usar</th><th>Producto</th><th class="n">Necesario</th><th class="n">Compra</th><th class="n">Costo neto</th></tr></thead><tbody>'+rr.map(function(r){var m=r.m;return '<tr class="'+(r.on?"":"off")+'"><td><input type="checkbox" data-czm="'+m.id+'" aria-label="Usar '+esc(m.nombre)+'"'+(r.on?" checked":"")+'></td><td><b>'+esc(m.nombre)+'</b><div class="mini">'+((+m.precio||0)>0?money(m.precio)+' c/IVA':'<span class="pill warn">Falta precio</span>')+' · rinde '+num(m.rendimiento)+' '+esc(m.rendUnidad||"m²")+'</div></td><td class="n">'+num(Math.round(r.base*10)/10)+' '+esc(m.rendUnidad||"m²")+'</td><td class="n">'+r.u+' '+esc(m.unidad||"u")+'</td><td class="n">'+money(r.neto)+'</td></tr>'}).join("")+'</tbody></table>'}
 function czRes(c){return '<div class="res">'+
   '<div><span>Materiales del sistema</span><b>'+money(c.mat)+'</b></div><div><span>Materiales menores</span><b>'+money(c.men)+'</b></div><div><span>Petróleo y traslados</span><b>'+money(c.pet)+'</b></div><div><span>Mano de obra ('+num(cz.tec)+' × '+num(cz.dias)+' días)</span><b>'+money(c.mo)+'</b></div>'+
   '<div><span><b>Costo total neto</b></span><b>'+money(c.costo)+'</b></div><div><span>Costo por m²</span><b>'+money(cz.m2?c.costo/cz.m2:0)+'</b></div>'+
@@ -2406,6 +2409,7 @@ document.addEventListener("change",function(e){if(e.target.dataset&&e.target.dat
 document.addEventListener("submit",function(e){if(!sheetState||!e.target||e.target.id!=="frm")return;e.preventDefault();submit()});
 document.addEventListener("input",function(e){
   if(e.target.id==="q"){q=e.target.value;render();return}
+  if(e.target.id==="czq"){czq=e.target.value;var tm=document.getElementById("czmat");if(tm)tm.innerHTML=czTable(czCalc());return}
   if(e.target.dataset&&e.target.dataset.qp!==undefined&&e.target.type!=="checkbox"&&e.target.tagName!=="SELECT"){qpSet(e.target,false);return}
   if(e.target.dataset&&e.target.dataset.cz){var k=e.target.dataset.cz;czTouched=true;cz[k]=(k==="servicio"||k==="sistema")?e.target.value:(e.target.value===""?0:+String(e.target.value).replace(/\./g,"").replace(",","."));if(isNaN(cz[k]))cz[k]=0;czUpdate();return}
   if(e.target.closest&&e.target.closest("#frm")){updIva();if(sheetState&&sheetState.c==="ventas"&&e.target.name==="productoId"){var pp=byId("productos",e.target.value),pu=document.getElementById("f_precioUnit");if(pp&&pu)pu.value=Math.round(+pp.precioVenta||0).toLocaleString("es-CL")}}
