@@ -797,6 +797,7 @@ function save(c,id,data){
   if(c==="cobros"){var cm=cobroCheck(id,data);if(cm){toast(cm);return Promise.reject(new Error(cm))}}
   var p=id?db.doc(c+"/"+id).set(data):db.collection(c).add(Object.assign({creado:Date.now()},data));
   if(!id&&c==="cotizaciones"&&data.numero)p=p.then(function(r){corrAfterNew(data.numero);return r});
+  if(c==="agenda"&&data.obraId&&EJ_T.indexOf(data.tipo)>=0)p=p.then(function(r){ejSync(data.obraId,id,data.fecha);return r});
   if(c==="cobros"&&data.tipo==="Saldo final"&&data.obraId)p=p.then(function(r){obraFinaliza(data.obraId,data.fecha);return r});
   return p.then(function(r){toast(id?"Cambios guardados":"Guardado");return r},function(e){toast(e&&e.code==="quota_exceeded"?"Se alcanzó el límite de registros":"No se pudo guardar. Intenta de nuevo.");throw e});
 }
@@ -851,6 +852,7 @@ function hoyCard(){var t=today(),m=addDays(t,1),adm=isAdm();
   var ch=[];
   if(adm){var nSol=S.solicitudes.filter(function(x){return solEtapa(x)==="Nueva"}).length,nSeg=segDueList().length,nMan=mantList().length;
     var nAnt=antList().filter(function(x){return x.dias>=2}).length;if(nAnt)ch.push('<a class="hchip warn" href="#" data-scroll="antcard">'+nAnt+(nAnt>1?" anticipos atrasados":" anticipo atrasado")+'</a>');
+    var nEj=ejPend().length;if(nEj)ch.push('<a class="hchip" href="#" data-scroll="ejcard">'+nEj+(nEj>1?" proyectos sin fecha":" proyecto sin fecha")+'</a>');
     if(nSol)ch.push('<a class="hchip warn" href="#solicitudes">'+nSol+(nSol>1?" solicitudes sin contestar":" solicitud sin contestar")+'</a>');
     if(nSeg)ch.push('<a class="hchip" href="#" data-scroll="segcard">'+nSeg+(nSeg>1?" cotizaciones por seguir":" cotización por seguir")+'</a>');
     var nRes=resList().length;if(nRes)ch.push('<a class="hchip" href="#" data-scroll="rescard">'+nRes+(nRes>1?" reseñas por pedir":" reseña por pedir")+'</a>');
@@ -873,7 +875,7 @@ function antCard(){var L=antList();if(!L.length)return "";
   return '<div class="card" id="antcard"><div class="ch"><h3>Anticipos por recibir · '+L.length+'</h3><span class="mini">'+money(sum(L,function(x){return x.monto}))+' en total</span></div><div>'+L.map(function(x){var urg=x.dias>=2;
     return '<div class="hoyit"><div class="hh" style="color:'+(urg?"var(--warn)":"var(--mut)")+'">'+(x.dias?x.dias+" d":"Hoy")+'</div><button class="hb" data-open="'+(x.ob?"obras":"cotizaciones")+'" data-id="'+(x.ob?x.ob.id:x.cot.id)+'"><b>'+esc(x.nombre)+'</b><span class="mini">'+esc([nameOf("clientes",x.cli),"Anticipo "+x.pct+" % · "+money(x.monto),urg?"Aceptada hace "+x.dias+" días sin pago":""].filter(Boolean).join(" · "))+'</span></button><div class="ha">'+
       '<a class="calb" href="'+esc(waTo(x.cli,antText(x)))+'" target="_blank" rel="noopener" title="Recordar el anticipo por WhatsApp" aria-label="Recordar el anticipo por WhatsApp">'+ic("wa")+'</a>'+
-      (x.ob?'<button class="calb" data-cobrar="'+x.ob.id+'" title="Registrar el anticipo" aria-label="Registrar el anticipo">'+ic("cobro")+'</button>':'<button class="calb" data-mkobra="'+x.cot.id+'" title="Crear el proyecto" aria-label="Crear el proyecto">'+ic("obra")+'</button>')+'</div></div>'}).join("")+'</div></div>'}
+      (x.ob?'<button class="calb" data-cobrar="'+x.ob.id+'" title="Registrar el anticipo" aria-label="Registrar el anticipo">'+ic("cobro")+'</button>':'<button class="calb" data-mkobra="'+x.cot.id+'" title="Crear el proyecto" aria-label="Crear el proyecto">'+ic("obra")+'</button>')+'<button class="calb" data-ejec="'+(x.ob?x.ob.id:'cot:'+x.cot.id)+'" title="Agendar los días de ejecución" aria-label="Agendar los días de ejecución">'+ic("agenda")+'</button></div></div>'}).join("")+'</div></div>'}
 /* ----- 1. Seguimiento de cotizaciones ----- */
 var SEG_DIAS=[3,7,14],SEG_N=["1er seguimiento","2° seguimiento","Último seguimiento"];
 function segN(c){return Math.min(3,+c.segN||0)}
@@ -1095,6 +1097,7 @@ function vPanel(){
   var P={hoy:"",num:"",obras:""};
   P.hoy+=hoyCard();
   P.hoy+=antCard();
+  P.hoy+=ejCard();
   P.num+='<div class="kpis">'+
    kpi("Cotizado este mes",money(sum(cotMes,function(c){return c.neto})),cotMes.length+(cotMes.length===1?" cotización · neto":" cotizaciones · neto"),"cot")+
    (function(){var TM=tasaMes(mo),r=TM.ac.length+TM.re.length;return kpi("Aceptación "+mesLabel(mo,true).replace(/ de \d{4}$/,""),TM.tasa==null?"—":TM.tasa+" %",r?TM.ac.length+" de "+r+" respondidas"+(TM.en.length?" · "+TM.en.length+" esperando":""):(TM.en.length?TM.en.length+" esperando respuesta":"Sin cotizaciones respondidas"),"tasa")})()+
@@ -1224,7 +1227,7 @@ function vAgenda(){
 }
 
 /* ---------- generic list ---------- */
-function head(c,sub){var s=SCH[c];return '<div class="head"><div><h1>'+esc(s.label)+'</h1><p>'+esc(sub)+'</p></div><div class="row-actions">'+(c==="cotizaciones"?'<button class="btn" data-corr="1">Próxima N° '+esc(nextCot())+' · cambiar</button><a class="btn" href="#cotpdf">'+ic("pdf")+'Cotizador rápido (PDF)</a>':'')+(c==="solicitudes"?'<button class="btn pri" data-solnew="1">'+ic("plus")+'Registrar solicitud</button>':'')+(c==="plantillas"?'<a class="btn" href="#cotpdf">'+ic("pdf")+'Volver al cotizador</a>':'')+((c==="obras"||c==="gastos"||c==="cobros")&&downloads?'<button class="btn" data-xlsx="all">'+ic("dl")+'Excel</button>':'')+(c==="clientes"&&downloads?'<button class="btn" data-basecli="1">'+ic("dl")+'Base de clientes (Excel)</button><button class="btn" data-reach="1">'+ic("dl")+'Lista Hostinger Reach ('+reachRows().length+')</button>':'')+((c==="productos"||c==="ventas")?'<button class="btn pri" data-acqnew="">'+ic("pdf")+'Cotizador Acrimper</button>':'')+(c==="agenda"?'<button class="btn" data-visnew="">'+ic("edit")+'Informe de visita técnica</button>':'')+(S[c].length?'<button class="btn" data-csv="'+c+'"'+(downloads?'':' hidden')+'>'+ic("dl")+'Exportar CSV</button>':'')+'<button class="btn pri add" data-new="'+c+'">'+ic("plus")+'Agregar '+esc(s.one)+'</button></div></div>'}
+function head(c,sub){var s=SCH[c];return '<div class="head"><div><h1>'+esc(s.label)+'</h1><p>'+esc(sub)+'</p></div><div class="row-actions">'+(c==="cotizaciones"?'<button class="btn" data-corr="1">Próxima N° '+esc(nextCot())+' · cambiar</button><a class="btn" href="#cotpdf">'+ic("pdf")+'Cotizador rápido (PDF)</a>':'')+(c==="solicitudes"?'<button class="btn pri" data-solnew="1">'+ic("plus")+'Registrar solicitud</button>':'')+(c==="plantillas"?'<a class="btn" href="#cotpdf">'+ic("pdf")+'Volver al cotizador</a>':'')+((c==="obras"||c==="gastos"||c==="cobros")&&downloads?'<button class="btn" data-xlsx="all">'+ic("dl")+'Excel</button>':'')+(c==="clientes"&&downloads?'<button class="btn" data-basecli="1">'+ic("dl")+'Base de clientes (Excel)</button><button class="btn" data-reach="1">'+ic("dl")+'Lista Hostinger Reach ('+reachRows().length+')</button>':'')+((c==="productos"||c==="ventas")?'<button class="btn pri" data-acqnew="">'+ic("pdf")+'Cotizador Acrimper</button>':'')+(c==="agenda"?'<button class="btn" data-visnew="">'+ic("edit")+'Informe de visita técnica</button>'+(window.__ROLE==="Solo lectura"?'':'<button class="btn" data-ejec="">'+ic("obra")+'Agendar ejecución</button>'):'')+(S[c].length?'<button class="btn" data-csv="'+c+'"'+(downloads?'':' hidden')+'>'+ic("dl")+'Exportar CSV</button>':'')+'<button class="btn pri add" data-new="'+c+'">'+ic("plus")+'Agregar '+esc(s.one)+'</button></div></div>'}
 var SUBS={solicitudes:"Todo lo que llega: web, WhatsApp, llamadas, correo, Instagram y recomendaciones",guias:"Guías de drycochile.cl para compartir con tus clientes",plantillas:"Ítems, beneficios y observaciones que usa el cotizador rápido",servicios:"Fichas para enviar al cliente o mostrar en la visita",productos:"Fichas de los productos que vendes",ventas:"Ventas de productos Acrimper",clientes:"Personas, empresas y comunidades",cotizaciones:"Presupuestos enviados y su estado",obras:"Avance, cobros, gastos y ganancia por proyecto",cobros:"Pagos recibidos de tus clientes",gastos:"Compras y costos, por proyecto o generales",materiales:"Inventario de productos y stock mínimo",equipo:"Personas que trabajan contigo"};
 function vList(c){
   var s=SCH[c];var rows=S[c].slice();
@@ -1741,6 +1744,114 @@ function obraFinaliza(oid,fecha){var o=byId("obras",oid);if(!o||o.estado==="Term
   S.agenda.filter(function(a){return a.obraId===oid&&!a.hecho&&(a.fecha||"")<=f}).forEach(function(a){patch("agenda",a.id,{hecho:true})});
   var aid="ag-rev-"+oid;if(db&&!byId("agenda",aid)){var dir=[o.direccion,o.comuna].filter(Boolean).join(", ");db.doc("agenda/"+aid).set({titulo:"Revisión preventiva anual · "+(o.nombre||""),tipo:"Visita técnica",fecha:addMonths(f,12),hora:null,clienteId:o.clienteId||null,obraId:oid,direccion:dir||null,notas:"Agendada sola al terminar el proyecto. Revisar el sistema y ofrecer mantención.",hecho:false,creado:Date.now()})}
   setTimeout(function(){toast("Proyecto terminado · pide la reseña hoy y la revisión anual quedó agendada")},400)}
+/* ----- Días de ejecución: agendar y reagendar el trabajo de un proyecto ----- */
+var EJ_T=["Inicio de proyecto","Trabajo en terreno","Entrega"],EJ=null,EJ_MOT=["Lluvia o clima","Pedido del cliente","Materiales","Equipo o personal","Otra obra se extendió","Otro"];
+var EJ_MODOS=[["lv","Lunes a viernes"],["ls","Lunes a sábado"],["td","Todos los días"]];
+function ejItems(oid,all){return S.agenda.filter(function(a){return a.obraId===oid&&EJ_T.indexOf(a.tipo)>=0&&(all||!a.hecho)}).sort(agSort)}
+function ejOk(s,m){var w=pdate(s).getDay();return m==="td"||(m==="ls"?w!==0:(w!==0&&w!==6))}
+function ejGen(ini,n,m){var L=[],d=ini,g=0;if(!ini)return L;n=Math.max(1,Math.min(60,Math.round(+n)||1));while(L.length<n&&g<500){if(ejOk(d,m))L.push(d);d=addDays(d,1);g++}return L}
+function ejNext(s,m){var d=s,g=0;while(!ejOk(d,m)&&g<10){d=addDays(d,1);g++}return d}
+function ejCotNom(c){var q=c.pdf?qpFull(c.pdf):null,cl=nameOf("clientes",c.clienteId);return (q&&q.proyecto)||((c.servicio||"Proyecto")+(cl?" · "+cl:""))}
+function ejPend(){var L=[];
+  S.obras.filter(function(o){return (o.estado==="Programada"||o.estado==="Pausada"||!o.estado)&&!ejItems(o.id).length}).forEach(function(o){L.push({ref:o.id,ob:o,nombre:o.nombre,cli:o.clienteId})});
+  S.cotizaciones.filter(function(c){return c.estado==="Aceptada"&&!S.obras.some(function(o){return o.cotizacionId===c.id})}).forEach(function(c){L.push({ref:"cot:"+c.id,cot:c,nombre:ejCotNom(c),cli:c.clienteId})});
+  return L}
+function ejF(f){return fdate(f,true).replace(",","")}
+function ejDias(d){return d.map(ejF)}
+function ejRango(d){if(!d.length)return "";if(d.length===1)return ejF(d[0]);return "del "+ejF(d[0])+" al "+ejF(d[d.length-1])}
+function ejOpen(ref){var o=null,cz=null;ref=ref||"";
+  if(ref.indexOf("cot:")===0){cz=byId("cotizaciones",ref.slice(4));o=cz?(S.obras.filter(function(x){return x.cotizacionId===cz.id})[0]||null):null}else if(ref)o=byId("obras",ref);
+  var P=o?ejItems(o.id):[],prev=P.map(function(a){return a.fecha}),t=today();
+  var n=1,q=null;if(!P.length){var c0=cz||(o&&o.cotizacionId&&byId("cotizaciones",o.cotizacionId));q=c0&&c0.pdf?qpFull(c0.pdf):null;var mm=q&&String(q.plazo||"").match(/(\d+)\s*d[ií]as?/i);if(mm)n=Math.min(30,+mm[1])}
+  var ini=prev[0]||ejNext(addDays(t,1),"lv"),last=P[P.length-1];
+  EJ={oid:o?o.id:null,cot:(!o&&cz)?cz.id:null,prev:prev,dias:prev.length?prev.slice():ejGen(ini,n,"lv"),ini:ini,n:prev.length||n,modo:"lv",hora:(P[0]&&P[0].hora)||"08:30",
+    eq:(P[0]&&P[0].equipo)||(o&&o.equipo)||[],ent:P.length?!!(last&&last.tipo==="Entrega"):true,mot:"",notas:(P[0]&&P[0].notas)||"",done:null,busy:false};
+  ejRender()}
+function ejClose(){var L=document.getElementById("ejw");if(L)L.remove();EJ=null}
+function ejRead(){if(!EJ)return;var g=function(id){var x=document.getElementById(id);return x?x.value:null};
+  var v=g("ej_hora");if(v!==null)EJ.hora=v;v=g("ej_mot");if(v!==null)EJ.mot=v;v=g("ej_notas");if(v!==null)EJ.notas=v;
+  var en=document.getElementById("ej_ent");if(en)EJ.ent=en.checked;
+  var bx=document.querySelectorAll("#ejw [data-ejeq]");if(bx.length){EJ.eq=[];bx.forEach(function(b){if(b.checked)EJ.eq.push(b.dataset.ejeq)})}}
+function ejRender(){var L=document.getElementById("ejw");if(!L){L=document.createElement("div");L.id="ejw";L.className="actaw";L.style.alignItems="center";L.style.justifyContent="center";document.body.appendChild(L)}
+  var o=EJ.oid&&byId("obras",EJ.oid),cz=EJ.cot&&byId("cotizaciones",EJ.cot),re=EJ.prev.length>0,nom=EJ.nom||(o?o.nombre:cz?ejCotNom(cz):""),cli=nameOf("clientes",(o||cz||{}).clienteId);
+  var hd='<div class="sh"><div><h2>'+(EJ.done?(EJ.done.re?"Ejecución reagendada":"Ejecución agendada"):re?"Reagendar ejecución":"Agendar ejecución")+'</h2><div class="mini">'+esc(nom||"Elige el proyecto")+(cli&&nom.indexOf(cli)<0?" · "+esc(cli):"")+'</div></div><button class="x" data-ejx="1" aria-label="Cerrar">'+ic("x")+'</button></div>';
+  var box='<div class="aw" style="height:auto;max-height:94vh;margin:auto;border-radius:16px;max-width:520px">';
+  if(EJ.done){var D=EJ.done,wa=waNum(D.cli);
+    L.innerHTML=box+hd+'<div class="sb"><p style="margin:0 0 10px"><b>'+D.d.length+(D.d.length>1?" días":" día")+'</b> '+esc(ejRango(D.d))+(EJ.hora?", llegada "+esc(EJ.hora):"")+'.</p><div class="sublist">'+D.d.map(function(f,i){return '<div class="ag"><div class="h">'+esc(fdate(f)).replace(/\.$/,"")+'</div><span><span class="t">'+esc(ejF(f))+'</span><span class="m mini" style="display:block">'+esc(D.tipos[i])+'</span></span></div>'}).join("")+'</div><p class="mini" style="margin:10px 0 0">Quedó en la agenda y en Hoy. Inicio y término del proyecto se actualizaron.</p></div>'+
+      '<div class="sf" style="flex-wrap:wrap"><a class="btn" href="'+esc(ejCal(D))+'" target="_blank" rel="noopener">'+ic("agenda")+'Calendario</a>'+(D.oid?'<button class="btn" data-ejver="'+D.oid+'">'+ic("obra")+'Ver proyecto</button>':'')+(wa?'<a class="btn pri" href="'+esc(waTo(D.cli,ejWaText(D)))+'" target="_blank" rel="noopener">'+ic("wa")+'Avisar al cliente</a>':'<button class="btn pri" data-ejx="1">Listo</button>')+'</div></div>';return}
+  if(!EJ.oid&&!EJ.cot){var Pn=ejPend(),Ac=S.obras.filter(function(x){return x.estado==="En curso"||((x.estado==="Programada"||x.estado==="Pausada")&&ejItems(x.id).length)});
+    var op=function(x,lab){return '<option value="'+esc(x)+'">'+esc(lab)+'</option>'};
+    L.innerHTML=box+hd+'<div class="sb"><div class="form"><div class="fld full"><label for="ej_ref">Proyecto</label><select id="ej_ref"><option value="">Elige el proyecto…</option>'+
+      (Pn.length?'<optgroup label="Sin fecha">'+Pn.map(function(x){return op(x.ref,x.nombre+(x.cot?" (cotización aceptada)":""))}).join("")+'</optgroup>':'')+
+      (Ac.length?'<optgroup label="Ya agendados (reagendar)">'+Ac.map(function(x){return op(x.id,x.nombre)}).join("")+'</optgroup>':'')+'</select>'+
+      (Pn.length||Ac.length?'':'<span class="hint">No hay proyectos ni cotizaciones aceptadas por agendar. Primero marca la cotización como Aceptada.</span>')+'</div></div></div><div class="sf"><button class="btn" data-ejx="1">Cancelar</button></div></div>';return}
+  var eqs=S.equipo||[],fin=EJ.dias.length?EJ.dias[EJ.dias.length-1]:"";
+  L.innerHTML=box+hd+'<div class="sb">'+
+    (re?'<div class="mini" style="margin:0 0 10px;max-width:none">Agendado ahora: <b>'+esc(ejDias(EJ.prev).join(", "))+'</b></div>':'')+
+    '<div class="form">'+
+    '<div class="fld"><label for="ej_ini">'+(re?"Nuevo primer día":"Primer día")+'</label><input id="ej_ini" type="date" value="'+esc(EJ.ini)+'"></div>'+
+    '<div class="fld"><label for="ej_n">Días de trabajo</label><input id="ej_n" type="number" min="1" max="60" inputmode="numeric" value="'+esc(EJ.n)+'"></div>'+
+    '<div class="fld"><label for="ej_modo">Se trabaja</label><select id="ej_modo">'+EJ_MODOS.map(function(m){return '<option value="'+m[0]+'"'+(m[0]===EJ.modo?" selected":"")+'>'+m[1]+'</option>'}).join("")+'</select></div>'+
+    '<div class="fld"><label for="ej_hora">Hora de llegada</label><input id="ej_hora" type="time" value="'+esc(EJ.hora||"")+'"></div>'+
+    '<div class="fld full"><label>Días agendados · '+EJ.dias.length+'</label><div class="chips" style="flex-wrap:wrap;gap:6px">'+(EJ.dias.length?EJ.dias.map(function(f,i){return '<button type="button" class="chip on" data-ejdel="'+i+'" title="Quitar este día" aria-label="Quitar '+esc(ejF(f))+'">'+esc(ejF(f))+' ✕</button>'}).join(""):'<span class="mini">Sin días. Elige el primer día o agrega uno.</span>')+'</div>'+
+      '<div class="row-actions" style="margin:6px 0 0;align-items:center"><input id="ej_add" type="date" aria-label="Agregar un día suelto" style="width:auto"><button type="button" class="btn" data-ejaddb="1">'+ic("plus")+'Agregar día</button></div>'+
+      '<span class="hint">Toca un día para quitarlo (feriado, lluvia). Puedes agregar días sueltos aunque no sean seguidos.</span></div>'+
+    (eqs.length?'<div class="fld full"><label>Equipo</label><div style="display:flex;flex-wrap:wrap;gap:10px 16px">'+eqs.map(function(m){return '<label style="display:flex;flex-direction:row;gap:8px;align-items:center;font-weight:500;color:var(--ink)"><input type="checkbox" style="width:18px;height:18px;flex:none;margin:0" data-ejeq="'+esc(m.id)+'"'+(EJ.eq.indexOf(m.id)>=0?" checked":"")+'>'+esc(m.nombre||"")+'</label>'}).join("")+'</div></div>':'')+
+    '<div class="fld full"><label style="display:flex;flex-direction:row;gap:10px;align-items:center;font-weight:500;color:var(--ink)"><input type="checkbox" style="width:18px;height:18px;flex:none;margin:0" id="ej_ent"'+(EJ.ent?" checked":"")+'>El último día'+(fin?" ("+esc(ejF(fin))+")":"")+' es la entrega y el cobro del saldo</label></div>'+
+    (re?'<div class="fld full"><label for="ej_mot">Motivo del cambio</label><select id="ej_mot"><option value="">Elige el motivo…</option>'+EJ_MOT.map(function(m){return '<option'+(m===EJ.mot?" selected":"")+'>'+m+'</option>'}).join("")+'</select></div>':'')+
+    '<div class="fld full"><label for="ej_notas">Notas para el equipo</label><textarea id="ej_notas" rows="2" placeholder="Ej: llevar andamio, pedir llave en conserjería">'+esc(EJ.notas)+'</textarea></div>'+
+    '</div></div><div class="sf"><button class="btn" data-ejx="1">Cancelar</button><button class="btn pri" data-ejsave="1"'+(EJ.busy?" disabled":"")+'>'+ic("check")+(EJ.busy?"Guardando…":re?"Guardar nuevas fechas":"Agendar "+EJ.dias.length+(EJ.dias.length===1?" día":" días"))+'</button></div></div>'}
+function ejCal(D){var a=D.d[0],b=addDays(D.d[D.d.length-1],1);var det="Días: "+ejDias(D.d).join(", ")+(EJ&&EJ.hora?" · llegada "+EJ.hora:"")+(D.cliNom?" · "+D.cliNom:"");
+  return "https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent("Ejecución · "+D.nom)+"&dates="+a.replace(/-/g,"")+"/"+b.replace(/-/g,"")+"&ctz=America/Santiago&details="+encodeURIComponent(det)+"&location="+encodeURIComponent(D.dir||"")}
+function ejWaText(D){var L=D.d.map(function(f){return "• "+ejF(f)}).join("\n"),hr=EJ&&EJ.hora?"\nLlegamos a las "+EJ.hora+" aprox.":"";
+  if(D.re)return saludo(D.cli)+", ¿cómo estás? Te escribo para avisarte que reprogramamos *"+D.nom+"*"+(D.mot==="Lluvia o clima"?" por el pronóstico del tiempo":"")+". Las nuevas fechas son:\n\n"+L+hr+"\n\nDisculpa el cambio y cualquier duda me avisas por aquí.\n\n"+FIRMA;
+  return saludo(D.cli)+", ¿cómo estás? Te confirmo las fechas de *"+D.nom+"*:\n\n"+L+hr+"\n\nCualquier duda me avisas por aquí. Muchas gracias.\n\n"+FIRMA}
+function ejMkObra(cid){var cz=byId("cotizaciones",cid),cl=cz&&byId("clientes",cz.clienteId);if(!cz)return Promise.reject(new Error("Cotización no encontrada"));
+  var q=cz.pdf?qpFull(cz.pdf):null,T=q?cotTotals(q):null,netoE=cz.neto;if(cotEligioB(cz)&&T&&T.alt)netoE=T.alt.neto;
+  var rec={nombre:ejCotNom(cz),clienteId:cz.clienteId||null,cotizacionId:cz.id,servicio:cz.servicio||null,m2:cz.m2||null,neto:netoE||0,conIva:"Sí",anticipoPct:T&&T.ant?T.ant:60,estado:"Programada",avance:0,garantia:q&&+q.garantia?+q.garantia:24,direccion:cl&&cl.direccion||null,comuna:cl&&cl.comuna||null};
+  return save("obras",null,rec).then(function(r){rec.id=r.id;EJ._o=rec;return r.id})}
+function ejSave(){if(!EJ||EJ.busy)return;ejRead();var d=EJ.dias.slice().sort(),re=EJ.prev.length>0;
+  if(!d.length){toast("Elige al menos un día");return}
+  if(re&&!EJ.mot){toast("Indica el motivo del cambio");var m=document.getElementById("ej_mot");if(m)m.focus();return}
+  if(!db){toast("Sin conexión con los datos");return}
+  EJ.busy=true;ejRender();
+  (EJ.oid?Promise.resolve(EJ.oid):ejMkObra(EJ.cot)).then(function(oid){
+    var o=byId("obras",oid)||EJ._o,nom=o.nombre||"Proyecto",c=agCli({obraId:oid,clienteId:o.clienteId});
+    var dir=[o.direccion,o.comuna].filter(Boolean).join(", ")||(c&&[c.direccion,c.comuna].filter(Boolean).join(", "))||"";
+    var old=ejItems(oid),hechos=ejItems(oid,true).filter(function(a){return a.hecho}),k=hechos.length,n=d.length,tot=k+n,tipos=[],ps=[];
+    d.forEach(function(f,i){var tipo=EJ.ent&&i===n-1?"Entrega":(i===0&&k===0?"Inicio de proyecto":"Trabajo en terreno");tipos.push(tipo);
+      var rec={titulo:nom+(tot>1?" · día "+(k+i+1)+" de "+tot:""),tipo:tipo,fecha:f,hora:EJ.hora||null,clienteId:o.clienteId||null,obraId:oid,direccion:dir||null,equipo:EJ.eq.slice(),notas:EJ.notas||(old[i]&&old[i].notas)||null,ejec:true,hecho:false,actualizado:Date.now()};
+      ps.push(old[i]?db.doc("agenda/"+old[i].id).set(Object.assign({creado:old[i].creado||Date.now()},rec)):db.collection("agenda").add(Object.assign({creado:Date.now()},rec)))});
+    old.slice(n).forEach(function(a){ps.push(db.doc("agenda/"+a.id).delete())});
+    var all=hechos.map(function(a){return a.fecha}).concat(d).sort(),op={inicio:all[0],termino:all[all.length-1],actualizado:Date.now()};
+    if(EJ.eq.length)op.equipo=EJ.eq.slice();if(!o.estado||o.estado==="Pausada")op.estado="Programada";
+    if(re&&d.join()!==EJ.prev.join())op.reagendos=(o.reagendos||[]).concat([{el:today(),antes:EJ.prev.slice(),despues:d,motivo:EJ.mot||null}]);
+    ps.push(db.doc("obras/"+oid).update(op));
+    return Promise.all(ps).then(function(){EJ.busy=false;EJ.oid=oid;EJ.nom=nom;EJ.done={oid:oid,d:d,tipos:tipos,re:re,mot:EJ.mot,nom:nom,cli:o.clienteId,cliNom:c&&c.nombre||"",dir:dir};toast(re?"Fechas actualizadas":"Ejecución agendada");ejRender()})
+  }).catch(function(){if(EJ){EJ.busy=false;ejRender()}toast("No se pudo agendar. Intenta de nuevo.")})}
+function ejSync(oid,id,fecha){var o=byId("obras",oid);if(!o||o.estado==="Terminada"||!db)return;
+  var f=ejItems(oid,true).filter(function(a){return a.id!==id}).map(function(a){return a.fecha}).concat(fecha?[fecha]:[]).filter(Boolean).sort();if(!f.length)return;
+  if(f[0]!==o.inicio||f[f.length-1]!==o.termino)patch("obras",oid,{inicio:f[0],termino:f[f.length-1]})}
+function ejSec(r){var A=ejItems(r.id,true),P=A.filter(function(a){return !a.hecho}),ro=window.__ROLE==="Solo lectura",rg=r.reagendos||[];
+  var b=ro||r.estado==="Terminada"?'':'<button class="btn'+(P.length?'':' pri')+'" data-ejec="'+r.id+'">'+ic("agenda")+(P.length?'Reagendar':'Agendar ejecución')+'</button>';
+  return '<div class="sec">Días de ejecución '+b+'</div>'+(A.length?'<div class="sublist">'+A.map(function(a){return agRow(a,true)}).join("")+'</div>':'<div class="mini">Sin días agendados. Agenda la ejecución para que aparezca en Hoy y en la agenda del equipo.</div>')+
+    (rg.length?'<div class="mini" style="margin-top:6px;max-width:none">Reagendado '+rg.length+(rg.length>1?" veces":" vez")+': '+rg.map(function(x){return esc(fdate(x.el))+(x.motivo?" ("+esc(String(x.motivo).toLowerCase())+")":"")}).join(", ")+'</div>':'')}
+function ejCard(){var L=ejPend();if(!L.length)return "";
+  return '<div class="card" id="ejcard"><div class="ch"><h3>Por agendar · '+L.length+'</h3><span class="mini">Proyectos y cotizaciones aceptadas sin días de ejecución</span></div><div>'+L.slice(0,8).map(function(x){
+    return '<div class="hoyit"><div class="hh" style="color:var(--mut)">'+ic("agenda")+'</div><button class="hb" data-open="'+(x.ob?"obras":"cotizaciones")+'" data-id="'+(x.ob?x.ob.id:x.cot.id)+'"><b>'+esc(x.nombre)+'</b><span class="mini">'+esc([nameOf("clientes",x.cli),x.cot?"Cotización aceptada":x.ob.estado||""].filter(Boolean).join(" · "))+'</span></button><div class="ha"><button class="btn" data-ejec="'+esc(x.ref)+'">Agendar</button></div></div>'}).join("")+'</div></div>'}
+document.addEventListener("click",function(e){var t=e.target.closest("[data-ejec],[data-ejx],[data-ejdel],[data-ejsave],[data-ejaddb],[data-ejver]");if(!t)return;
+  if(t.hasAttribute("data-ejec")){e.preventDefault();ejOpen(t.getAttribute("data-ejec"));return}
+  if(!EJ)return;
+  if(t.dataset.ejx){ejClose();return}
+  if(t.dataset.ejver){var id=t.dataset.ejver;ejClose();openDetail("obras",id);return}
+  if(t.dataset.ejsave){ejSave();return}
+  if(t.hasAttribute("data-ejdel")){ejRead();EJ.dias.splice(+t.dataset.ejdel,1);EJ.n=EJ.dias.length||1;if(EJ.dias.length)EJ.ini=EJ.dias[0];ejRender();return}
+  if(t.dataset.ejaddb){ejRead();var v=(document.getElementById("ej_add")||{}).value;if(!v){toast("Elige la fecha a agregar");return}if(EJ.dias.indexOf(v)<0){EJ.dias.push(v);EJ.dias.sort();EJ.n=EJ.dias.length;EJ.ini=EJ.dias[0]}ejRender();return}});
+document.addEventListener("change",function(e){if(!EJ||!e.target.closest||!e.target.closest("#ejw"))return;var id=e.target.id;
+  if(id==="ej_ref"){if(e.target.value)ejOpen(e.target.value);return}
+  if(id==="ej_ini"||id==="ej_n"||id==="ej_modo"){ejRead();if(id==="ej_ini")EJ.ini=e.target.value;if(id==="ej_n")EJ.n=Math.max(1,Math.min(60,Math.round(+e.target.value)||1));if(id==="ej_modo")EJ.modo=e.target.value;
+    if(EJ.ini){if(id!=="ej_n"&&EJ.prev.length&&id==="ej_ini")EJ.n=EJ.dias.length||EJ.n;EJ.dias=ejGen(id==="ej_modo"?EJ.ini:ejNext(EJ.ini,EJ.modo),EJ.n,EJ.modo);if(EJ.dias.length)EJ.ini=EJ.dias[0]}ejRender()}});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&EJ&&!EJ.busy)ejClose()});
 document.addEventListener("click",function(e){var t=e.target.closest("[data-solest]");if(!t)return;e.preventDefault();patch("solicitudes",t.dataset.id,{estado:t.dataset.solest});toast("Etapa: "+t.dataset.solest)});
 function solCanal(r){return r.canal||"Web"}
 function solEtapa(r){var man=r.estado==="Atendida"?"En contacto":(r.estado||"Nueva");if(man==="Descartada"||man==="Perdida")return man;
@@ -1834,6 +1945,7 @@ function detailHTML(c,r){
     sb+='<div class="sum"><div><span>Neto</span><b>'+money(r.neto)+'</b></div><div><span>'+(r.conIva==="No"?"Total (sin IVA)":"Total con IVA")+'</span><b>'+money(k.total)+'</b></div><div><span>Cobrado</span><b>'+money(k.cobrado)+'</b></div><div><span>Por cobrar</span><b style="color:'+(k.porCobrar?"var(--warn)":"var(--ok)")+'">'+money(k.porCobrar)+'</b></div><div><span>Costo neto</span><b>'+money(k.gastos)+'</b></div><div><span>Ganancia neta ('+Math.round(k.margen*100)+' %)</span><b style="color:'+(k.ganancia<0?"var(--bad)":"var(--ok)")+'">'+money(k.ganancia)+'</b></div></div>';
     sb+=topeHTML(r);
     sb+='<dl class="kv">'+kv("Servicio",r.servicio)+kv("Superficie",r.m2?num(r.m2)+" m²":"")+kv("Dirección",[r.direccion,r.comuna].filter(Boolean).join(", "))+kv("Inicio",fdate(r.inicio))+kv("Término",fdate(r.termino))+kv("Garantía",r.garantia?r.garantia+" meses"+(garVence(r)?" · vence "+fdate(garVence(r)):""):"")+kv("Cotización",nameOf("cotizaciones",r.cotizacionId))+kv("Equipo",(r.equipo||[]).map(function(x){return nameOf("equipo",x)}).filter(Boolean).join(", "))+kv("Notas",r.notas)+'</dl>';
+    sb+=ejSec(r);
     var cb=S.cobros.filter(function(x){return x.obraId===r.id}).sort(function(a,b){return (b.fecha||"").localeCompare(a.fecha||"")});
     var gs=S.gastos.filter(function(x){return x.obraId===r.id}).sort(function(a,b){return (b.fecha||"").localeCompare(a.fecha||"")});
     sb+=qcSec(r);
@@ -1853,7 +1965,7 @@ function detailHTML(c,r){
     sb+='<div class="row-actions">'+(r.pdf?'<button class="btn pri" data-cotshare="'+r.id+'">'+ic("pdf")+'Compartir PDF con datos de pago</button><button class="btn" data-cotdl="'+r.id+'">'+ic("dl")+'Descargar PDF</button><button class="btn" data-cotedit="'+r.id+'">'+ic("edit")+'Editar en el cotizador</button>':'<button class="btn" data-cotedit="'+r.id+'">'+ic("pdf")+'Crear PDF en el cotizador</button>')+'</div>';
     var svc=S.servicios.filter(function(x){return x.servicio&&x.servicio===r.servicio}).sort(sorter("servicios"))[0];
     if(svc)sb+='<button class="btn" data-svfor="'+svc.id+'" data-cli="'+esc(r.clienteId||"")+'">'+ic("serv")+'Enviar ficha del servicio: '+esc(svc.nombre)+'</button>';
-    if(r.estado==="Aceptada")sb+=ob?'<button class="btn" data-open="obras" data-id="'+ob.id+'">'+ic("obra")+'Ver proyecto: '+esc(ob.nombre)+'</button>':'<button class="btn pri" data-mkobra="'+r.id+'">'+ic("obra")+'Crear proyecto desde esta cotización</button>';
+    if(r.estado==="Aceptada")sb+=(ob?'<button class="btn" data-open="obras" data-id="'+ob.id+'">'+ic("obra")+'Ver proyecto: '+esc(ob.nombre)+'</button>':'<button class="btn" data-mkobra="'+r.id+'">'+ic("obra")+'Crear proyecto desde esta cotización</button>')+(window.__ROLE==="Solo lectura"?'':'<button class="btn'+(ob&&ejItems(ob.id).length?'':' pri')+'" data-ejec="'+(ob?ob.id:'cot:'+r.id)+'">'+ic("agenda")+(ob&&ejItems(ob.id).length?'Reagendar ejecución':'Agendar ejecución')+'</button>');
   }else if(c==="servicios"){
     preloadSv(r);var cli=sheetState&&sheetState.cli||"";
     var conTel=S.clientes.filter(function(x){return x.telefono}).sort(sorter("clientes"));
