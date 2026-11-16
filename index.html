@@ -633,6 +633,7 @@ var SCH={
  gastos:{label:"Gastos",one:"gasto",icon:"gasto",filter:"categoria",fields:[
   {k:"fecha",l:"Fecha",t:"date",d:"today"},
   {k:"documento",l:"Tipo de compra",t:"select",o:["Factura","Boleta","Sin IVA"],d:"Factura"},
+  {k:"numDoc",l:"N° de factura o boleta",t:"text"},
   {k:"monto",l:"Monto con IVA",t:"money",req:1,hint:"El total de la factura, IVA incluido"},
   {k:"categoria",l:"Categoría",t:"select",o:["Materiales","Mano de obra","Transporte y combustible","Herramientas y equipos","Publicidad","Administración","Otros"],d:"Materiales"},
   {k:"obraId",l:"Proyecto (opcional)",t:"ref",ref:"obras"},
@@ -730,7 +731,7 @@ var SCH={
   {k:"activo",l:"Activo",t:"select",o:["Sí","No"],d:"Sí"},
   {k:"notas",l:"Notas",t:"area",full:1}]}
 };
-var NAV=[["panel","Panel","panel"],["cotizaciones","Cotizaciones","cot"],["cotpdf","Cotizador rápido","pdf"],["cotizador","Costos y margen","calc"],["servicios","Servicios","serv"],["obras","Proyectos","obra"],["agenda","Agenda","agenda"],["clientes","Clientes","cli"],["gastos","Gastos","gasto"],["cobros","Cobros","cobro"],["impuestos","Impuestos (IVA)","fac"],["materiales","Materiales","mat"],["equipo","Equipo","equipo"],["productos","Acrimper","mat"],["ventas","Ventas Acrimper","cobro"],["solicitudes","Solicitudes","cli"],["marketing","Marketing","chart"],["tarjeta","Mi tarjeta","card"],["usuarios","Usuarios","equipo"]];
+var NAV=[["panel","Panel","panel"],["cotizaciones","Cotizaciones","cot"],["cotpdf","Cotizador rápido","pdf"],["cotizador","Costos y margen","calc"],["servicios","Servicios","serv"],["obras","Proyectos","obra"],["agenda","Agenda","agenda"],["clientes","Clientes","cli"],["gastos","Gastos","gasto"],["cobros","Cobros","cobro"],["impuestos","Impuestos y ganancia","fac"],["materiales","Materiales","mat"],["equipo","Equipo","equipo"],["productos","Acrimper","mat"],["ventas","Ventas Acrimper","cobro"],["solicitudes","Solicitudes","cli"],["marketing","Marketing","chart"],["tarjeta","Mi tarjeta","card"],["usuarios","Usuarios","equipo"]];
 var TABS=[["panel","Panel","panel"],["cotizaciones","Cotiz.","cot"],["obras","Proyectos","obra"],["agenda","Agenda","agenda"]];
 
 /* ---------- helpers ---------- */
@@ -2549,24 +2550,65 @@ var mo=today().slice(0,7),V=ivaMes(ym),P=ivaPend(),C=V.cierre,nx=ymAdd(ym,1);var
     if(V.vs.length)h+=blk("Ventas Acrimper ("+V.vs.length+")",V.vs.map(function(v){var m=ventaTotal(v);return ivr(v.comprador||"Venta",fdate(v.fecha)+" · "+(v.documento||"")+" · "+money(m),ivaOf(m),["ventas",v.id])}),"",money(V.debVen));
     h+=blk("Compras con factura ("+V.gs.length+")",V.gs.map(function(x){return ivr(x.proveedor||x.descripcion||x.categoria||"Compra",fdate(x.fecha)+" · "+money(x.monto)+" con IVA"+(x.obraId?" · "+nameOf("obras",x.obraId):""),gIva(x),["gastos",x.id])}),"Sin compras con factura este mes. Marca “Factura” al registrar un gasto para descontar su IVA.",V.cred?money(V.cred):null);
     if(ym===mo&&P.obras.length)h+=blk("IVA por cobrar en proyectos aceptados",P.obras.map(function(o){var p=obraCalc(o).porCobrar;return ivr(o.nombre,"Pendiente "+money(p)+" con IVA · "+o.estado,ivaOf(p),["obras",o.id])}),"",money(P.iva));
+    var cut=h.length;
     if(isAdm()){
       h+='<div class="sec">Cierre del mes con el F29</div>';
       if(C)h+='<div class="mini" style="max-width:none">Cerrado el '+esc(fdate(C.fecha))+'. Pagado en el F29: <b>'+money(C.pagado)+'</b>'+(+C.remanente?' · Remanente para '+esc(ymLabel(nx))+': <b>'+money(C.remanente)+'</b>':'')+'. '+esc(ymLabel(nx))+' parte con ese remanente.</div><div class="row-actions" style="margin-top:8px"><button class="btn" data-f29del="'+ym+'">Reabrir el mes</button></div>';
       else h+='<div class="mini" style="max-width:none">Cuando presentes el F29, anota los montos exactos que declaraste. Así '+esc(ymLabel(nx))+' parte cuadrado y el remanente pasa solo al mes siguiente.</div><div class="row-actions" style="flex-wrap:wrap;margin-top:8px;align-items:flex-end"><div class="fld" style="max-width:180px"><label for="f29_p">IVA pagado en el F29 ($)</label><input id="f29_p" inputmode="numeric" value="'+f0(Math.max(0,V.pagar))+'"></div><div class="fld" style="max-width:200px"><label for="f29_r">Remanente para '+esc(ymLabel(nx))+' ($)</label><input id="f29_r" inputmode="numeric" value="'+f0(Math.max(0,-V.pagar))+'"></div><button class="btn pri" data-f29="'+ym+'">Cerrar '+esc(ymLabel(ym))+'</button></div>';
       if(ym===mo){var AJ=byId("config","iva")||{};h+='<div class="sec">Ajustar saldo de IVA</div><div class="mini" style="max-width:none">Si los números no cuadran a mitad de mes, ingresa el IVA a pagar real a una fecha. Desde el día siguiente la app suma y descuenta solo los movimientos nuevos.</div><div class="row-actions" style="flex-wrap:wrap;margin-top:8px;align-items:flex-end"><div class="fld" style="max-width:180px"><label for="ivaj_m">IVA a pagar ($)</label><input id="ivaj_m" inputmode="numeric" value="'+esc(AJ.monto!=null?f0(AJ.monto):"")+'"></div><div class="fld" style="max-width:170px"><label for="ivaj_d">Al día</label><input id="ivaj_d" type="date" value="'+esc(AJ.desde||today())+'"></div><button class="btn pri" data-ivaadj="1">Guardar ajuste</button>'+(AJ.desde?'<button class="btn" data-ivaadj="0">Quitar ajuste</button>':'')+'</div>'}
     }
+    var f29=h.slice(cut);
     h+='<p class="mini">El IVA de cada cobro va al mes de su factura o boleta (si no la indicas, al mes del pago). Proyectos sin IVA no suman IVA; las compras con boleta no descuentan IVA. Si un mes queda con remanente a favor, se descuenta solo del mes siguiente. El monto exacto lo confirma tu contador con el F29.</p>'
-  return {title:title,sub:sub,h:h}}
-var IMPYM=null;
+  return {title:title,sub:sub,h:h,f29:f29}}
+var IMPYM=null,IMPSEC="suma";
 function ivaRefresh(ym){if(document.getElementById("kpiw"))kpiOpen("iva",ym);else render()}
-function vImpuestos(){var mo=today().slice(0,7),ym=IMPYM&&IMPYM<=mo?IMPYM:mo,R=ivaBody(ym,"page"),V=ivaMes(ym);
-  var h='<div class="head"><div><h1>Impuestos</h1><p>IVA mensual para el F29: suma el IVA de lo que cobras y facturas, y resta el IVA de tus compras con factura.</p></div></div>';
-  h+='<div class="kpis">'+kpi("+ IVA de ventas · "+ymLabel(ym),money(V.deb),(V.cb.length+V.vt.length+V.vs.length)+" cobros y ventas con IVA")+kpi("− IVA de compras con factura",money(V.cred),V.gs.length+(V.gs.length===1?" factura":" facturas"))+kpi(V.pagar<0?"Remanente a favor":"IVA a pagar",'<span style="color:'+(V.pagar<0?'var(--ok)':'var(--warn)')+'">'+money(Math.abs(V.pagar))+'</span>',V.cierre?"Cerrado con el F29":"Declara y paga hasta el 20 de "+ymLabel(ymAdd(ym,1)))+'</div>';
-  var ms=[];for(var k=0;k<6;k++){var m=ymAdd(mo,-k);if(m<IVA_INI)break;ms.push(m)}
-  if(ms.length>1)h+='<div class="card"><div class="ch"><h3>Resumen por mes</h3><span class="mini">Toca un mes para ver su detalle</span></div><div class="list">'+ms.map(function(m){var W=ivaMes(m);return '<button class="it'+(m===ym?' on':'')+'" data-impmes="'+m+'"><span class="t">'+esc(ymLabel(m))+'</span><span class="m">Ventas + '+money(W.deb)+' · compras − '+money(W.cred)+(W.rem?' · remanente − '+money(W.rem):'')+'</span><span class="r"><span class="amt">'+money(Math.abs(W.pagar))+'</span><span class="pill '+(W.pagar<0?'ok':W.cierre?'ok':m===mo?'acc':'warn')+'">'+(W.pagar<0?'A favor':W.cierre?'F29 cerrado':m===mo?'En curso':'Sin cerrar')+'</span></span></button>'}).join("")+'</div></div>';
-  h+='<div class="card"><div class="ch"><h3>'+esc(R.title)+'</h3><span class="mini">'+esc(R.sub)+'</span></div><div class="cb">'+R.h+'</div></div>';
+function impRow(t,sub,amt,sign,open,warn){return '<button class="it"'+(open?' data-open="'+open[0]+'" data-id="'+open[1]+'"':'')+'><span class="t">'+t+'</span><span class="m">'+esc(sub)+(warn?' · <b style="color:var(--warn)">'+esc(warn)+'</b>':'')+'</span><span class="r">'+(amt==null?'':'<span class="amt" style="color:'+(sign==="+"?"var(--warn)":sign==="−"?"var(--ok)":"inherit")+'">'+(sign?sign+' ':'')+money(amt)+'</span>')+'</span></button>'}
+function impList(t,rows,empty,tot){return '<div class="sec">'+esc(t)+(tot!=null?'<span class="mini" style="margin:0"><b>'+tot+'</b></span>':'')+'</div>'+(rows.length?'<div class="sublist list">'+rows.join("")+'</div>':'<div class="mini" style="max-width:none">'+esc(empty)+'</div>')}
+function vImpuestos(){var mo=today().slice(0,7),ym=IMPYM&&IMPYM<=mo?IMPYM:mo,V=ivaMes(ym),R=ivaBody(ym,"page"),RM=mesesRes()[ym]||{obras:[],ant:0,fin:0,gastosObras:0,gastosGen:0,gastos:0,ganancia:0,neto:0};
+  var GM=S.gastos.filter(function(x){return (x.fecha||"").slice(0,7)===ym}).sort(function(a,b){return (b.fecha||"").localeCompare(a.fecha||"")}),gTot=sum(GM,gCost);
+  var h='<div class="head"><div><h1>Impuestos y ganancia</h1><p>IVA del mes para el F29, gastos con IVA y ganancia. Toca cada recuadro para ver el detalle.</p></div></div>';
+  h+='<div class="row-actions" style="margin-bottom:12px;align-items:center"><button class="btn" data-impmes="'+ymAdd(ym,-1)+'">‹ '+esc(ymLabel(ymAdd(ym,-1)))+'</button><b style="font-size:16px;padding:0 6px">'+esc(ymLabel(ym))+'</b>'+(ym<mo?'<button class="btn" data-impmes="'+ymAdd(ym,1)+'">'+esc(ymLabel(ymAdd(ym,1)))+' ›</button>':'')+(V.cierre?'<span class="pill ok">F29 cerrado</span>':ym<mo?'<span class="pill warn">F29 sin cerrar</span>':'<span class="pill acc">Mes en curso</span>')+'</div>';
+  function tile(k,l,v,s,col){var on=IMPSEC===k;return '<button type="button" class="card kpi kpib" data-impsec="'+k+'" aria-pressed="'+on+'" style="'+(on?'border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset':'')+'"><div class="l">'+esc(l)+'<span class="kgo" aria-hidden="true">›</span></div><div class="v"'+(col?' style="color:'+col+'"':'')+'>'+v+'</div><div class="s">'+esc(s)+'</div></button>'}
+  var nV=V.cb.length+V.vt.length+V.vs.length;
+  h+='<div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(165px,1fr))">'
+   +tile("suma","Suma IVA · ventas","+ "+money(V.deb),nV+(nV===1?" documento emitido":" documentos emitidos"))
+   +tile("resta","Descuenta IVA · compras","− "+money(V.cred),V.gs.length+(V.gs.length===1?" factura de compra":" facturas de compra"))
+   +tile("pagar",V.pagar<0?"IVA a favor":"IVA a pagar",money(Math.abs(V.pagar)),V.cierre?"Cerrado con el F29":"Paga hasta el 20 de "+ymLabel(ymAdd(ym,1)),V.pagar<0?"var(--ok)":"var(--warn)")
+   +tile("gastos","Gastos con IVA",money(gTot),GM.length+(GM.length===1?" compra del mes":" compras del mes"))
+   +tile("ganancia","Ganancia",money(RM.ganancia),RM.obras.length+(RM.obras.length===1?" proyecto terminado":" proyectos terminados"),RM.ganancia<0?"var(--bad)":"var(--ok)")+'</div>';
+  var b="";
+  if(IMPSEC==="suma"){
+    b+='<p class="mini" style="max-width:none;margin-bottom:6px">Cada factura o boleta que emites con IVA suma ese IVA al F29 del mes del documento.</p>';
+    b+=impList("Facturas y boletas de proyectos ("+V.cb.length+")",V.cb.map(function(x){var m=+x.monto||0,o=byId("obras",x.obraId),doc=String(x.documento||(o&&o.factura)||"").trim();return impRow(esc(doc?"Doc. N° "+doc:"Sin N° de documento")+' · '+esc(nameOf("obras",x.obraId)||"Proyecto"),fdate(x.fechaDoc||x.fecha)+" · "+(x.tipo||"Cobro")+" · total "+money(m)+" con IVA",ivaOf(m),"+",["obras",x.obraId],doc?"":"falta anotar el N°")}),"Sin cobros con IVA este mes.",V.debCob?"+ "+money(V.debCob):null);
+    if(V.vt.length)b+=impList("Visitas técnicas ("+V.vt.length+")",V.vt.map(function(c){var m=+c.visitaMonto||0;return impRow(esc(c.visitaDoc?"Doc. N° "+c.visitaDoc:"Sin N° de documento")+' · '+esc(c.nombre||"Cliente"),fdate(c.visitaFecha)+" · total "+money(m)+" con IVA",ivaOf(m),"+",["clientes",c.id],c.visitaDoc?"":"falta anotar el N°")}),"","+ "+money(V.debVis));
+    if(V.vs.length)b+=impList("Ventas Acrimper ("+V.vs.length+")",V.vs.map(function(v){var m=ventaTotal(v);return impRow(esc(v.comprador||"Venta"),fdate(v.fecha)+" · "+(v.documento||"")+" · total "+money(m),ivaOf(m),"+",["ventas",v.id])}),"","+ "+money(V.debVen));
+    b+='<div class="sum"><div><span>Total IVA que suma</span><b>+ '+money(V.deb)+'</b></div></div>'}
+  else if(IMPSEC==="resta"){
+    var bo=GM.filter(function(x){return x.documento!=="Factura"});
+    b+='<p class="mini" style="max-width:none;margin-bottom:6px">Solo las compras registradas como “Factura” descuentan IVA. Las boletas y compras sin IVA no descuentan.</p>';
+    b+=impList("Facturas de compra que descuentan IVA ("+V.gs.length+")",V.gs.map(function(x){return impRow(esc(x.proveedor||x.descripcion||x.categoria||"Compra")+(x.numDoc?' · Factura N° '+esc(x.numDoc):''),fdate(x.fecha)+" · "+(x.categoria||"")+(x.obraId?" · "+(nameOf("obras",x.obraId)||""):" · gasto general")+" · total "+money(x.monto)+" con IVA",gIva(x),"−",["gastos",x.id],x.numDoc?"":"")}),"Sin compras con factura este mes. Marca “Factura” al registrar un gasto para descontar su IVA.",V.cred?"− "+money(V.cred):null);
+    if(bo.length)b+=impList("Compras con boleta o sin IVA: no descuentan ("+bo.length+")",bo.map(function(x){return impRow(esc(x.proveedor||x.descripcion||x.categoria||"Compra"),fdate(x.fecha)+" · "+(x.documento||"")+(x.obraId?" · "+(nameOf("obras",x.obraId)||""):""),+x.monto||0,"",["gastos",x.id])}),"",money(sum(bo,gCost)));
+    b+='<div class="sum"><div><span>Total IVA que descuenta</span><b>− '+money(V.cred)+'</b></div></div>'}
+  else if(IMPSEC==="pagar"){
+    b+='<div class="sum">'+(V.adj?'<div><span>Saldo ajustado al '+esc(fdate(V.adj.desde))+'</span><b>'+money(V.base)+'</b></div>':'')+'<div><span>+ IVA de ventas</span><b>'+money(V.deb)+'</b></div><div><span>− IVA de compras con factura</span><b>'+money(V.cred)+'</b></div>'+(V.rem?'<div><span>− Remanente de '+esc(ymLabel(ymAdd(ym,-1)))+'</span><b>'+money(V.rem)+'</b></div>':'')+'<div><span>'+(V.pagar<0?"= Remanente a favor":"= IVA a pagar")+'</span><b>'+money(Math.abs(V.pagar))+'</b></div></div>';
+    if(V.pend.length)b+=impList("Cobros sin N° de factura o boleta ("+V.pend.length+")",V.pend.map(function(x){return impRow(esc(x.t),x.m,null,"",x.open)}),"",null)+'<p class="mini" style="max-width:none">Anota el N° en el cobro para que el F29 cuadre.</p>';
+    b+=R.f29||'';
+    b+='<p class="mini" style="max-width:none">El monto exacto lo confirma tu contador con el F29.</p>'}
+  else if(IMPSEC==="gastos"){
+    var gp=GM.filter(function(x){return x.obraId&&byId("obras",x.obraId)}),gg=GM.filter(function(x){return !(x.obraId&&byId("obras",x.obraId))});
+    b+='<p class="mini" style="max-width:none;margin-bottom:6px">Todas las compras con fecha de '+esc(ymLabel(ym))+', con el monto pagado IVA incluido.</p>';
+    b+=impList("Gastos de proyectos ("+gp.length+")",gp.map(function(x){return impRow(esc(nameOf("obras",x.obraId)||"Proyecto")+' · '+esc(x.proveedor||x.descripcion||x.categoria||"Compra"),fdate(x.fecha)+" · "+(x.categoria||"")+" · "+(x.documento||""),gCost(x),"",["gastos",x.id])}),"Sin gastos de proyectos este mes.",money(sum(gp,gCost)));
+    b+=impList("Gastos generales ("+gg.length+")",gg.map(function(x){return impRow(esc(x.proveedor||x.descripcion||x.categoria||"Compra"),fdate(x.fecha)+" · "+(x.categoria||"")+" · "+(x.documento||""),gCost(x),"",["gastos",x.id])}),"Sin gastos generales este mes.",money(sum(gg,gCost)));
+    b+='<div class="sum"><div><span>Total gastos con IVA</span><b>'+money(gTot)+'</b></div><div><span>IVA incluido en facturas (lo recuperas)</span><b>'+money(sum(GM,gIva))+'</b></div></div>'}
+  else{
+    b+='<p class="mini" style="max-width:none;margin-bottom:6px">Cada proyecto suma completo en el mes en que lo marcas como terminado: lo pagado sin IVA menos sus gastos con IVA. Los gastos generales restan en el mes de su fecha.</p>';
+    b+=impList("Proyectos terminados ("+RM.obras.length+")",RM.obras.map(function(o){var cj=obraCaja(o);return impRow(esc(o.nombre),"Pagado sin IVA "+money(cj.ant+cj.fin)+" − gastos con IVA "+money(cj.gastos),cj.ganancia,"",["obras",o.id])}),"Aún no terminas proyectos este mes.",null);
+    var EP=enProceso();if(ym===mo&&EP.obras.length)b+=impList("En proceso: aún no suman ("+EP.obras.length+")",EP.obras.map(function(o){var k=obraCalc(o);return impRow(esc(o.nombre),"Valor neto "+money(o.neto)+" · gastos con IVA "+money(k.gastos)+" · ganancia proyectada "+money(k.ganancia),k.ganancia,"",["obras",o.id])}),"",null);
+    b+='<div class="sum"><div><span>Pagado sin IVA de proyectos terminados</span><b>'+money(RM.ant+RM.fin)+'</b></div><div><span>− Gastos con IVA de esos proyectos</span><b>'+money(RM.gastosObras||0)+'</b></div><div><span>− Gastos generales del mes</span><b>'+money(RM.gastosGen||0)+'</b></div><div><span>= Ganancia</span><b style="color:'+(RM.ganancia<0?"var(--bad)":"var(--ok)")+'">'+money(RM.ganancia)+'</b></div></div>'}
+  var TT={suma:"IVA que suma: lo que facturaste",resta:"IVA que descuenta: tus compras con factura",pagar:"IVA a pagar y cierre del F29",gastos:"Gastos del mes",ganancia:"Ganancia del mes"};
+  h+='<div class="card" style="margin-top:12px"><div class="ch"><h3>'+esc(TT[IMPSEC]||"")+'</h3></div><div class="cb">'+b+'</div></div>';
   return h}
-document.addEventListener("click",function(e){var t=e.target.closest("[data-impmes]");if(!t)return;IMPYM=t.dataset.impmes;render();window.scrollTo(0,0)});
+document.addEventListener("click",function(e){var t=e.target.closest("[data-impmes],[data-impsec]");if(!t)return;if(t.dataset.impsec)IMPSEC=t.dataset.impsec;else IMPYM=t.dataset.impmes;render()});
 function kpiOpen(k,arg){var t=today(),mo=t.slice(0,7),h="",title="",sub="";
   function cotRow(c){return '<button class="it" data-open="cotizaciones" data-id="'+c.id+'"><span class="t">COT '+esc(c.numero)+' · '+esc(nameOf("clientes",c.clienteId)||"Sin cliente")+'</span><span class="m">'+esc([fdate(c.fecha),c.servicio,c.estado==="Rechazada"&&c.motivo?"Motivo: "+c.motivo:""].filter(Boolean).join(" · "))+'</span><span class="r"><span class="amt">'+money(c.neto)+'</span>'+pillFor(c.estado)+'</span></button>'}
   function blk(t2,rows,empty,tot){return '<div class="sec">'+esc(t2)+(tot!=null?'<span class="mini" style="margin:0"><b>'+tot+'</b></span>':'')+'</div>'+(rows.length?'<div class="sublist list">'+rows.join("")+'</div>':'<div class="mini" style="max-width:none">'+esc(empty)+'</div>')}
