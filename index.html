@@ -2357,7 +2357,7 @@ function buildGuiaPDF(g){
     var ps=wrapText(ln,"R",9.8,CW);need(Math.min(ps.length,3)*13.6);ps.forEach(function(s){if(y>BOT)cont();d.text(s,M,y,{sz:9.8,c:PC.ink});y+=13.6});y+=6}
   need(118);y+=8;d.rrect(M,y,CW,96,12,PC.navy);d.grad(M,y,CW,4,GRAD);
   d.text("¿TIENE ESTE PROBLEMA?",M+18,y+26,{f:"B",sz:7.8,c:PC.cyan,ls:1.6});d.text("Agende una visita técnica",M+18,y+48,{f:"B",sz:15,c:"#FFFFFF"});
-  d.text("Diagnóstico en terreno y cotización sin compromiso.",M+18,y+64,{sz:9,c:PC.sky});
+  d.text("Diagnóstico en terreno y presupuesto por escrito.",M+18,y+64,{sz:9,c:PC.sky});
   d.text(EMP.tel,W-M-18,y+40,{f:"B",sz:11,c:"#FFFFFF",align:"right",link:"https://wa.me/56956069678"});d.text(EMP.mail,W-M-18,y+56,{sz:9,c:PC.sky,align:"right",link:"mailto:"+EMP.mail});d.text(EMP.web,W-M-18,y+71,{sz:9,c:PC.sky,align:"right",link:"https://drycochile.cl"});
   y+=110;if(g.url){d.text("Versión web de esta guía: "+String(g.url).replace(/^https?:\/\//,""),M,y,{sz:8,c:PC.mut,link:g.url})}
   return d.output()}
