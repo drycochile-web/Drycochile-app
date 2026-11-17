@@ -1468,7 +1468,7 @@ function buildCotPDF(q){
       d.text("Anticipo "+T.ant+" %: "+clp(op[4]),ox+ow-12,y+oh-13,{sz:7.8,c:op[5]?PC.sky:PC.mut,align:"right"})});
     y+=oh+10;d.text("Indique la opción elegida al aceptar. Las condiciones comerciales son las mismas para ambas.",M,y,{sz:7.8,c:PC.mut});y+=18}
   // condiciones + banco
-  var cond="Proyecto a concluir en un plazo máximo de "+(q.plazo||"—")+". Al aceptar la cotización se considera el pago del "+T.ant+" % por concepto de materialidad y el "+(100-T.ant)+" % restante el día de recepción de las labores y/o término de faena. "+(q.garantia?"El proyecto cuenta con garantía de "+q.garantia+" meses desde su entrega y no aplica para catástrofes intencionales, naturales o causas desconocidas.":"La garantía se detalla según el sistema aplicado.")+(q.condExtra?" "+q.condExtra:"");
+  var cond="Proyecto a concluir en un plazo máximo de "+(q.plazo||"—")+". Al aceptar la cotización se considera el pago del "+T.ant+" % por concepto de materialidad y el "+(100-T.ant)+" % restante el día de recepción de las labores y/o término de faena. "+(q.garantia?"El proyecto cuenta con garantía de "+q.garantia+" meses desde su entrega y no aplica a daños intencionales, catástrofes naturales o causas ajenas a los trabajos.":"La garantía se detalla según el sistema aplicado.")+(q.condExtra?" "+q.condExtra:"");
   var bkw=200,cw2=CW-bkw-18,cl=wrapText(cond,"R",8.1,cw2),hasAnt=T.ant>0,bxH=hasAnt?172:136;var blockH=Math.max(cl.length*11+22,bxH);
   need(blockH+90);
   d.text("CONDICIONES COMERCIALES",M,y,{f:"B",sz:7.8,c:PC.acc,ls:1.2});var cy=y+14;cl.forEach(function(s){d.text(s,M,cy,{sz:8.1,c:PC.ink});cy+=11});
