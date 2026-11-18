@@ -1749,6 +1749,17 @@ function obraFinaliza(oid,fecha){var o=byId("obras",oid);if(!o||o.estado==="Term
   S.agenda.filter(function(a){return a.obraId===oid&&!a.hecho&&(a.fecha||"")<=f}).forEach(function(a){patch("agenda",a.id,{hecho:true})});
   var aid="ag-rev-"+oid;if(db&&!byId("agenda",aid)){var dir=[o.direccion,o.comuna].filter(Boolean).join(", ");db.doc("agenda/"+aid).set({titulo:"Revisión preventiva anual · "+(o.nombre||""),tipo:"Visita técnica",fecha:addMonths(f,12),hora:null,clienteId:o.clienteId||null,obraId:oid,direccion:dir||null,notas:"Agendada sola al terminar el proyecto. Revisar el sistema y ofrecer mantención.",hecho:false,creado:Date.now()})}
   setTimeout(function(){toast("Proyecto terminado · pide la reseña hoy y la revisión anual quedó agendada")},400)}
+/* ----- Finalizar o reabrir un proyecto desde su ficha ----- */
+function finObraBtn(r){if(window.__ROLE==="Solo lectura")return "";
+  if(r.estado==="Terminada")return '<span class="mini">Terminada'+(r.termino?' el '+esc(fdate(r.termino)):'')+'</span><button class="btn" data-reobra="'+r.id+'">Reabrir</button>';
+  return '<button class="btn pri" data-finobra="'+r.id+'">'+ic("check")+'Finalizar obra</button>'}
+document.addEventListener("click",function(e){var t=e.target.closest("[data-finobra],[data-finno],[data-finyes],[data-reobra]");if(!t)return;
+  var B=document.getElementById("finobra-box");
+  if(t.dataset.finobra){var o=byId("obras",t.dataset.finobra);if(!o||!B)return;var k=obraCalc(o);
+    B.innerHTML='<div class="confirm"><span><b>¿Dar por terminada esta obra?</b> Queda con avance 100 %, se marcan hechas sus tareas pendientes de la agenda y se agenda la revisión anual.'+(k.porCobrar>0?' Queda por cobrar '+money(k.porCobrar)+'.':'')+'</span><span class="row-actions"><label class="mini" for="finobra-fecha">Fecha de término</label><input type="date" id="finobra-fecha" value="'+today()+'" max="'+today()+'"><button type="button" class="btn" data-finno="1">Cancelar</button><button type="button" class="btn pri" data-finyes="'+o.id+'">Sí, finalizar</button></span></div>';return}
+  if(t.dataset.finno){if(B)B.innerHTML="";return}
+  if(t.dataset.finyes){var f=(document.getElementById("finobra-fecha")||{}).value||today();obraFinaliza(t.dataset.finyes,f);if(B)B.innerHTML="";return}
+  if(t.dataset.reobra){var r=byId("obras",t.dataset.reobra);if(!r)return;patch("obras",r.id,{estado:"En curso",termino:null});toast("Proyecto reabierto · queda En curso")}});
 /* ----- Días de ejecución: agendar y reagendar el trabajo de un proyecto ----- */
 var EJ_T=["Inicio de proyecto","Trabajo en terreno","Entrega"],EJ=null,EJ_MOT=["Lluvia o clima","Pedido del cliente","Materiales","Equipo o personal","Otra obra se extendió","Otro"];
 var EJ_MODOS=[["lv","Lunes a viernes"],["ls","Lunes a sábado"],["td","Todos los días"]];
@@ -1946,7 +1957,7 @@ function detailHTML(c,r){
   var h="",sb="";
   if(c==="obras"){var k=obraCalc(r);
     h='<div class="sh"><div><h2>'+esc(r.nombre)+'</h2><div class="mini">'+esc(nameOf("clientes",r.clienteId)||"Sin cliente")+'</div>'+docsChips(r)+'</div><button class="x" data-close="1" aria-label="Cerrar">'+ic("x")+'</button></div>';
-    sb='<div class="row-actions">'+pillFor(r.estado)+'<span class="mini">Avance '+(+r.avance||0)+' %</span><span class="bar" style="width:140px"><i style="width:'+Math.min(100,+r.avance||0)+'%"></i></span></div>';
+    sb='<div class="row-actions">'+pillFor(r.estado)+'<span class="mini">Avance '+(+r.avance||0)+' %</span><span class="bar" style="width:140px"><i style="width:'+Math.min(100,+r.avance||0)+'%"></i></span>'+finObraBtn(r)+'</div><div id="finobra-box"></div>';
     sb+='<div class="sum"><div><span>Neto</span><b>'+money(r.neto)+'</b></div><div><span>'+(r.conIva==="No"?"Total (sin IVA)":"Total con IVA")+'</span><b>'+money(k.total)+'</b></div><div><span>Cobrado</span><b>'+money(k.cobrado)+'</b></div><div><span>Por cobrar</span><b style="color:'+(k.porCobrar?"var(--warn)":"var(--ok)")+'">'+money(k.porCobrar)+'</b></div><div><span>Gastos con IVA</span><b>'+money(k.gastos)+'</b></div><div><span>Ganancia ('+Math.round(k.margen*100)+' %)</span><b style="color:'+(k.ganancia<0?"var(--bad)":"var(--ok)")+'">'+money(k.ganancia)+'</b></div></div>'+(obraIvaCred(r)>0?'<div class="mini" style="margin-top:6px">Ganancia = valor neto menos gastos con IVA. Los gastos incluyen '+money(obraIvaCred(r))+' de IVA de facturas, que recuperas como crédito en el F29.</div>':'');
     sb+=topeHTML(r);
     sb+='<dl class="kv">'+kv("Servicio",r.servicio)+kv("Superficie",r.m2?num(r.m2)+" m²":"")+kv("Dirección",[r.direccion,r.comuna].filter(Boolean).join(", "))+kv("Inicio",fdate(r.inicio))+kv("Término",fdate(r.termino))+kv("Garantía",r.garantia?r.garantia+" meses"+(garVence(r)?" · vence "+fdate(garVence(r)):""):"")+kv("Cotización",nameOf("cotizaciones",r.cotizacionId))+kv("Equipo",(r.equipo||[]).map(function(x){return nameOf("equipo",x)}).filter(Boolean).join(", "))+kv("Notas",r.notas)+'</dl>';
