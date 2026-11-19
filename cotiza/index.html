@@ -56,6 +56,9 @@ var CONV=null;
 var Q=new URLSearchParams(location.search),CORTO=Q.get("corto")==="1";
 if(Q.get("embed")==="1")document.body.classList.add("embed");
 if(CORTO){[].forEach.call(document.querySelectorAll(".lg"),function(e){e.style.display="none"})}
+var SERV={salas:"Salas técnicas e industriales",techos:"Cubiertas y techos",terrazas:"Terrazas y balcones",hormigon:"Hormigón y estanques",estacionamientos:"Subterráneos y estacionamientos",diagnostico:"No estoy seguro, necesito un diagnóstico"};
+var PAG=(Q.get("pagina")||"").replace(/[<>"&]/g,"").slice(0,60);
+(Q.get("servicio")||"").split(",").forEach(function(k){var val=SERV[k.trim()];if(!val)return;[].forEach.call(document.querySelectorAll("#servicios input"),function(x){if(x.value===val)x.checked=true})});
 function call(fn,args){return fetch(EXEC,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({fn:fn,args:args}),redirect:"follow"}).then(function(r){return r.json()}).then(function(o){if(o&&o.ok)return o.r;throw new Error(o&&o.e||"ERR")})}
 function v(id){return (document.getElementById(id).value||"").trim()}
 function height(){try{parent.postMessage({dryco:"altura",h:document.documentElement.scrollHeight},"*")}catch(e){}}
@@ -63,7 +66,7 @@ window.addEventListener("load",height);window.addEventListener("resize",height);
 if(CONV&&CONV.id){var s=document.createElement("script");s.async=1;s.src="https://www.googletagmanager.com/gtag/js?id="+CONV.id;document.head.appendChild(s);window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};gtag("js",new Date());gtag("config",CONV.id)}
 document.getElementById("f").addEventListener("submit",function(e){e.preventDefault();var err=document.getElementById("err");err.textContent="";
   var serv=[].map.call(document.querySelectorAll("#servicios input:checked"),function(x){return x.value});
-  var d={nombre:v("nombre"),telefono:v("telefono"),email:v("email"),tipoCliente:v("tipoCliente"),servicios:serv,comuna:v("comuna"),m2:v("m2"),urgencia:v("urgencia"),mensaje:v("mensaje"),autoriza:document.getElementById("autoriza").checked,web:v("web"),origen:(CORTO?"drycochile.cl · formulario de inicio":"drycochile.cl · página Cotiza aquí")};
+  var d={nombre:v("nombre"),telefono:v("telefono"),email:v("email"),tipoCliente:v("tipoCliente"),servicios:serv,comuna:v("comuna"),m2:v("m2"),urgencia:v("urgencia"),mensaje:v("mensaje"),autoriza:document.getElementById("autoriza").checked,web:v("web"),origen:(PAG?"drycochile.cl · página "+PAG:(CORTO?"drycochile.cl · formulario de inicio":"drycochile.cl · página Cotiza aquí"))};
   if(CORTO&&!d.mensaje)d.mensaje="Solicitud desde el formulario breve de la página de inicio.";
   var falta=[];if(!d.nombre)falta.push("nombre");if(d.telefono.replace(/\D/g,"").length<8)falta.push("teléfono");if(!CORTO&&!serv.length)falta.push("servicio");if(!d.comuna)falta.push("comuna");if(!d.mensaje)falta.push("descripción del problema");
   if(d.email&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email))falta.push("un correo válido");
