@@ -154,11 +154,13 @@ function contactForm(){var f=st.f;return '<div class="frm"><h2>Reciba su estimac
 '<label class="chk"><input type="checkbox" id="fa"'+(f.a?' checked':'')+'>Acepto recibir información y recomendaciones de mantención de DrycoChile. Puedo darme de baja cuando quiera.</label>'+
 '<button class="bnv" id="send" type="button"><i class="ti ti-send"></i> Enviar solicitud</button><p class="err" id="ferr" role="alert"></p></div>'}
 function buildData(){var v=SV[st.sv],e=v.diag?null:eff(v),L=[],m2="";
- L.push("Solicitud desde el cotizador web");L.push("Servicio: "+v.n+(e&&e.s!=="x"?" · "+SN[e.s].toLowerCase():""));L.push("Estimación mostrada al cliente: "+st.est);
- if(!v.diag){var A=Math.round(area(e));if(U()==="m3"){L.push("Capacidad informada: "+st.qty+" m³");L.push("Superficie interior estimada: "+A+" m² (calculada desde la capacidad"+(e.pool?", piscina rectangular de 1,4 m de profundidad":", estanque de hasta 2,5 m de alto con fondo, muros y losa superior")+")")}else L.push("Superficie: "+A+" m²");m2=String(A);
+ L.push("COTIZADOR WEB");L.push("Estimación mostrada al cliente: "+st.est);
+ if(!v.diag){var A=Math.round(area(e));m2=String(A);
+  if(U()==="m3")L.push("Capacidad informada: "+st.qty+" m³ = "+A+" m² de superficie interior estimada ("+(e.pool?"piscina rectangular de 1,4 m de profundidad":"estanque de hasta 2,5 m de alto con fondo, muros y losa superior")+")");
   v.q.forEach(function(q){var o=q.o[st.ans[q.k]||0];L.push(q.t+": "+(q.sys?SN[o[1].s]:o[0]))});L.push("Acceso: "+AC[st.ac][0])}
- L.push("Comuna: "+comuna());if(st.f.c.trim())L.push("Comentario del cliente: "+st.f.c.trim());
- return {nombre:st.f.n.trim(),telefono:st.f.t.trim(),email:st.f.e.trim(),tipoCliente:"",servicios:[v.f],comuna:comuna(),m2:m2,urgencia:"",mensaje:L.join("\n"),autoriza:st.f.a,web:($("web")||{}).value||"",origen:"drycochile.cl · cotizador · página "+PAGES[page][0]}}
+ else L.push(v.n+": requiere diagnóstico en terreno");
+ if(st.f.c.trim())L.push("Comentario del cliente: "+st.f.c.trim());
+ return {nombre:st.f.n.trim(),telefono:st.f.t.trim(),email:st.f.e.trim(),tipoCliente:"",servicios:[v.f],comuna:comuna(),m2:m2,urgencia:"",mensaje:L.join(" · "),autoriza:st.f.a,web:($("web")||{}).value||"",origen:"drycochile.cl · cotizador · página "+PAGES[page][0]}}
 function call(fn,args){return fetch(EXEC,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({fn:fn,args:args}),redirect:"follow"}).then(function(r){return r.json()}).then(function(o){if(o&&o.ok)return o.r;throw new Error(o&&o.e||"ERR")})}
 function render(){
  var s=st.step;$("err").textContent="";
