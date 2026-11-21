@@ -1,0 +1,223 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0B2A4A">
+<title>Calcule el costo de su proyecto · DrycoChile</title><link rel="icon" type="image/png" href="../icons/favicon-32.png">
+<meta name="description" content="Cotizador de impermeabilización DrycoChile: obtenga un rango estimado de inversión para terrazas, techos, salas técnicas y estanques en menos de 2 minutos.">
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root{--nv:#0B2A4A;--blt:#EAF2FC;--tx:#14202E;--tx2:#5A6878;--ln:#E3E8EF;--ok:#1A8F45;--wa:#1EA952;--bad:#C0392B}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:14px;line-height:1.45;color:var(--tx);background:#EEF2F8;-webkit-text-size-adjust:100%}
+body.embed{background:transparent}
+#dc{display:flex;flex-direction:column;background:#fff;border:1px solid var(--ln);border-radius:16px;overflow:hidden;max-width:640px;margin:16px auto;height:calc(100% - 32px);max-height:900px}
+body.embed #dc{margin:0 auto;height:100%;max-height:none}
+.hdr{background:var(--nv);color:#fff;padding:16px 20px;flex:none}
+.hrow{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.brand{font-size:17px;font-weight:600}.sub{font-size:12px;color:#B9CBE0}
+.badge{font-size:12px;background:rgba(255,255,255,.12);padding:5px 12px;border-radius:999px;white-space:nowrap}
+.stp{display:flex;align-items:center;margin-top:14px}
+.sc{flex:1;display:flex;align-items:center;gap:8px}.sc:last-child{flex:none}
+.sn{width:26px;height:26px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;border:1.5px solid #5C7899;color:#B9CBE0}
+.sn.a{background:#fff;color:var(--nv);border-color:#fff}
+.sl{font-size:12px;color:#B9CBE0;white-space:nowrap}.sl.c{color:#fff}
+.sb{flex:1;height:1.5px;background:#3D5A7C;margin:0 8px;min-width:8px}.sb.d{background:#fff}
+.main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 20px 8px;overscroll-behavior:contain}
+h1{margin:0;font-size:20px;font-weight:600}.lead{margin:4px 0 6px;font-size:13px;color:var(--tx2)}
+.lab{margin:18px 0 8px;font-size:13px;font-weight:600;color:var(--tx2)}
+.op{display:flex;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--ln);border-radius:10px;margin-bottom:8px;cursor:pointer;background:#fff;user-select:none}
+.op:hover{border-color:#B8C6D8}.op.on{border-color:var(--nv);background:var(--blt)}
+.op:focus-visible,.svc:focus-visible,button:focus-visible{outline:2px solid #1F6FD1;outline-offset:2px}
+.dot{width:18px;height:18px;border-radius:50%;border:1.5px solid #9AA8B8;flex:none;display:flex;align-items:center;justify-content:center;background:#fff}
+.on .dot{border-color:var(--nv)}.on .dot::after{content:'';width:9px;height:9px;border-radius:50%;background:var(--nv)}
+.osub{display:block;font-size:12px;color:var(--tx2);margin-top:2px}
+.svcs{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:10px}
+.svc{position:relative;cursor:pointer;padding:14px;border-radius:12px;background:#fff;border:1px solid var(--ln)}
+.svc.on{background:var(--blt);border:2px solid var(--nv);padding:13px}
+.svc .ck{position:absolute;top:10px;right:10px;font-size:18px;color:var(--nv)}
+.ico{width:38px;height:38px;border-radius:10px;background:var(--blt);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--nv)}
+.svc b{display:block;margin:10px 0 2px;font-size:14px}.svc small{font-size:12px;color:var(--tx2)}
+.tag{display:inline-block;margin-top:8px;font-size:11px;color:#8A5A00;background:#FFF4DB;padding:2px 8px;border-radius:999px}
+.box{border:1px solid var(--ln);border-radius:12px;padding:14px;background:#FAFBFD}
+.qrow{display:flex;gap:14px;align-items:center}
+.qin{position:relative;width:140px;flex:none}.qin span{position:absolute;right:12px;top:13px;color:var(--tx2)}
+input[type=number],input[type=text],input[type=tel],input[type=email],select,textarea{background:#fff;color:var(--tx);border:1px solid #CBD5E1;border-radius:10px;height:46px;padding:0 12px;font-size:16px;width:100%;font-family:inherit}
+input[type=number]{padding-right:42px;font-weight:600}
+textarea{height:76px;padding:10px 12px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid #9DBCE6;border-color:#1F6FD1}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;background:#D5DEE8;outline:none;margin:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--nv);border:3px solid #fff;box-shadow:0 0 0 1px var(--nv);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--nv);border:3px solid #fff;cursor:pointer}
+.rl{display:flex;justify-content:space-between;font-size:11px;color:#8A97A6;margin-top:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{border:1px solid #CBD5E1;background:#F6F8FB;color:#2E3D4F;border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+.chip:hover{border-color:var(--nv);color:var(--nv);background:#fff}
+.seg{display:inline-flex;background:#EEF2F6;border-radius:10px;padding:3px;margin-bottom:8px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:8px 14px;border-radius:8px;font-size:13px;color:#3A4A5C;cursor:pointer;font-family:inherit}
+.seg button.on{background:#fff;color:var(--nv);font-weight:600;box-shadow:0 0 0 1px #D5DEE8}
+.sys{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+.sys .op{flex-direction:column;align-items:flex-start;gap:4px;margin:0;padding:14px}
+.sys .t{display:flex;justify-content:space-between;width:100%;align-items:center;font-size:15px;font-weight:600}
+.wa-l{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ok);text-decoration:none;margin:4px 0 2px}
+.info{display:flex;gap:12px;padding:16px;border-radius:12px;background:#FFF8E8;border:1px solid #F3DFB0;margin-top:10px;color:#6B4A00;font-size:13px;line-height:1.6}
+.info i{font-size:22px;color:#8A5A00}.info b{display:block;color:#5C3D00;margin-bottom:4px;font-size:14px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 14px}.tags span{font-size:12px;background:#F1F4F8;color:#3A4A5C;padding:4px 10px;border-radius:999px}
+.res{background:var(--nv);border-radius:14px;padding:20px 22px;margin-bottom:14px;color:#fff}
+.res small{font-size:12px;color:#B9CBE0}.res .p{margin:6px 0 2px;font-size:28px;font-weight:600;letter-spacing:-.3px}.res .t{margin:6px 0 0;font-size:15px;line-height:1.6}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.two>div{border:1px solid var(--ln);border-radius:12px;padding:12px 14px}.two h3{margin:0 0 6px;font-size:12px;color:var(--tx2)}.two p{margin:2px 0;font-size:13px}
+.bwa{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--wa);color:#fff;border:0;border-radius:10px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:none}
+.bnv{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--nv);color:#fff;border:0;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}
+.bnv:disabled{opacity:.6;cursor:default}
+.frm{border:1px solid var(--ln);border-radius:12px;padding:16px;margin-top:14px;background:#FAFBFD}
+.frm h2{margin:0 0 2px;font-size:15px}.frm .lead{margin:0 0 4px;font-size:12px}
+.fl{display:block;font-size:12px;color:var(--tx2);margin:10px 0 4px}.fl i{color:var(--bad);font-style:normal}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--tx2);margin:12px 0;cursor:pointer}.chk input{margin-top:2px}
+.note{font-size:12px;color:var(--tx2);margin:12px 0 4px;line-height:1.5}
+.links{display:flex;justify-content:space-between;padding-bottom:8px}
+.lnk{border:0;background:transparent;color:var(--tx2);font-size:13px;padding:6px 0;cursor:pointer;font-family:inherit}.lnk.b{color:#1F6FD1}
+.err{font-size:13px;color:var(--bad);margin:8px 0 0;min-height:0}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-top:1px solid var(--ln);flex:none;background:#fff}
+.nav .bk{border:0;background:transparent;color:var(--tx2);font-size:14px;padding:10px 4px;cursor:pointer;font-family:inherit}
+.nav .nx{border:0;background:var(--nv);color:#fff;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.trust{background:#F5F7FA;border-top:1px solid var(--ln);padding:10px 20px;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--tx2);flex:none}.trust i{color:var(--nv)}
+.done{text-align:center;padding:24px 8px}.done .ic{width:56px;height:56px;border-radius:50%;background:#E6F6EC;color:var(--ok);display:inline-flex;align-items:center;justify-content:center;font-size:28px}
+.done h2{font-size:20px;margin:14px 0 6px}.done p{font-size:14px;color:var(--tx2);line-height:1.6;margin:0 0 6px}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+@media (max-width:520px){.hdr{padding:14px 16px}.main{padding:16px 16px 8px}.nav{padding:10px 16px}.sl{display:none}.sl.c{display:inline}.two,.g2{grid-template-columns:1fr}.res .p{font-size:24px}.qin{width:120px}.trust{display:none}}
+</style></head><body>
+<div id="dc">
+<div class="hdr"><div class="hrow"><div><div class="brand">DrycoChile</div><div class="sub" id="sub"></div></div><div class="badge" id="badge"></div></div><div class="stp" id="stp"></div></div>
+<div class="main" id="main"><div id="hd"></div><div id="body"></div><p class="err" id="err" role="alert"></p></div>
+<div class="nav" id="nav"><button class="bk" id="back" type="button"><i class="ti ti-arrow-left"></i> Atrás</button><button class="nx" id="next" type="button">Continuar <i class="ti ti-arrow-right"></i></button></div>
+<div class="trust"><span><i class="ti ti-shield-check"></i> Garantía incluida</span><span><i class="ti ti-tools"></i> Materiales y mano de obra</span><span><i class="ti ti-lock"></i> Sin registro previo</span></div>
+</div>
+<datalist id="rmlist"></datalist>
+<script>
+var EXEC="https://script.google.com/macros/s/AKfycbzhS66Ekgyq2HF7yVkoACSj7WFBG5AD1Hyj1h0sC_NCJdzKDqi_niiHfNk-gMDgZKzHdA/exec";
+var WAN="56956069678",MIN=500000,SPREAD=1.2;
+var Q=new URLSearchParams(location.search);if(Q.get("embed")==="1")document.body.classList.add("embed");
+var TIERS=[[10,2],[20,1.75],[40,1.15],[150,1],[1e9,0.9]];
+var SN={pr:"Sistema premium",es:"Sistema estándar"};
+var SYS={pr:["Premium","Nuestra solución de mayor desempeño"],es:["Estándar","Solución eficiente y probada"]};
+var SV={
+terraza:{n:"Terrazas y balcones",d:"Canterías, perímetros y canaletas",ic:"ti-building-cottage",u:"m2",f:"Terrazas y balcones",p:{x:[28000,35000]},
+ q:[{k:"est",t:"Estado actual",o:[["Mantención preventiva, sin filtración",{}],["Filtra hacia el nivel inferior",{}],["Cerámicas sueltas o quebradas",{f:1.15}],["Requiere demolición y reposición del revestimiento",{v:"La demolición y reposición del revestimiento se evalúa en terreno."}]]},
+ {k:"rev",t:"Revestimiento",o:[["Cerámica o porcelanato",{}],["Piedra o pizarra",{f:1.15}]]}]},
+techo:{n:"Techos y azoteas",d:"Losas, cubiertas planas y metálicas",ic:"ti-home",u:"m2",f:"Cubiertas y techos",p:{pr:[40000,50000],es:[22000,28000]},t:[[10,2],[20,1.75],[40,1.15],[100,1],[200,0.9],[500,0.8]],max:500,
+ q:[{k:"tipo",t:"Superficie del techo",o:[["Losa de hormigón o cubierta plana",{},"Incluye cubiertas con revestimiento metálico (PV4 / PV5)"],["Superficie con membrana asfáltica",{}]]},
+ {k:"sys",t:"Sistema",sys:1,o:[["Premium",{s:"pr"}],["Estándar",{s:"es"}]],waMsg:"Hola DrycoChile, necesito orientación para elegir el sistema de impermeabilización de mi techo."},
+ {k:"est",t:"Estado actual",o:[["Mantención preventiva",{}],["Filtraciones puntuales",{}],["Membrana existente deteriorada (hay que retirarla)",{a:6000}]]}]},
+sala:{n:"Salas técnicas",d:"Pisos y revestimientos",ic:"ti-building-factory-2",u:"m2",f:"Salas técnicas e industriales",p:{pr:[70000,90000],es:[40000,50000]},
+ q:[{k:"sys",t:"Sistema",sys:1,o:[["Premium",{s:"pr"}],["Estándar",{s:"es"}]],waMsg:"Hola DrycoChile, necesito orientación para elegir el revestimiento de piso de mi sala técnica."},
+ {k:"est",t:"Estado del piso",o:[["Buen estado",{}],["Desgastado o con fisuras",{f:1.2}],["Desprendido o con humedad",{v:"Con el piso desprendido o con humedad hay que evaluar el soporte en terreno."}]]}]},
+estanque:{n:"Estanques y piscinas",d:"Revestimiento interior",ic:"ti-droplet",u:"m3",both:1,f:"Hormigón y estanques",p:{x:[20000,30000]},
+ q:[{k:"tipo",t:"Tipo de estanque",o:[["Agua potable",{}],["Aguas lluvia o riego",{}],["Piscina",{pool:1,f:2}],["Otro",{v:"Este tipo de estanque se evalúa en terreno."}]]},
+ {k:"est",t:"Estado del hormigón",o:[["Buen estado",{}],["Fisuras o fierros expuestos",{f:1.2}]]}]},
+horm:{n:"Filtraciones en hormigón",d:"Muros, losas y juntas",ic:"ti-wall",f:"Hormigón y estanques",diag:"El tratamiento depende del origen de la filtración, que solo se identifica en terreno."},
+sub:{n:"Subterráneos",d:"Estacionamientos y muros",ic:"ti-car-garage",f:"Subterráneos y estacionamientos",diag:"En subterráneos el tratamiento depende del origen del agua y puede ser localizado o por el lado positivo del muro."}};
+var PAGES={inicio:["Inicio",null],terrazas:["Terrazas",["terraza"]],techos:["Techos",["techo"]],salas:["Salas técnicas",["sala"]],estanques:["Hormigón y estanques",["estanque","horm"]],subterraneos:["Subterráneos",["sub"]]};
+var page=PAGES[Q.get("p")]?Q.get("p"):"inicio";
+var AC=[["Fácil acceso",1],["Sin ascensor o sobre 3 pisos",1.10],["Requiere andamio o altura especial",1.15]];
+var REF=["Las Condes","Vitacura","Lo Barnechea","Providencia","Ñuñoa","La Reina","Colina / Chicureo","Santiago Centro"];
+var RM=["Alhué","Buin","Calera de Tango","Cerrillos","Cerro Navia","Chicureo","Colina","Conchalí","Curacaví","El Bosque","El Monte","Estación Central","Huechuraba","Independencia","Isla de Maipo","La Cisterna","La Florida","La Granja","La Pintana","La Reina","Lampa","Las Condes","Lo Barnechea","Lo Espejo","Lo Prado","Macul","Maipú","María Pinto","Melipilla","Ñuñoa","Padre Hurtado","Paine","Pedro Aguirre Cerda","Peñaflor","Peñalolén","Pirque","Providencia","Pudahuel","Puente Alto","Quilicura","Quinta Normal","Recoleta","Renca","San Bernardo","San Joaquín","San José de Maipo","San Miguel","San Pedro","San Ramón","Santiago","Santiago Centro","Talagante","Tiltil","Vitacura"];
+document.getElementById("rmlist").innerHTML=RM.map(function(c){return '<option value="'+c+'">'}).join("");
+function norm(t){return t.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim()}
+function isRM(t){t=norm(t.replace(" / Chicureo",""));return RM.some(function(c){return norm(c)===t})}
+function esc(t){return String(t).replace(/[<>&"]/g,"")}
+function $(id){return document.getElementById(id)}
+function clp(v){return "$"+Math.round(v).toLocaleString("es-CL")}
+function dq(u){return u==="m3"?25:50}
+var st;
+function fresh(){var list=PAGES[page][1],one=list&&list.length===1,sv=one?list[0]:null,unit=sv?SV[sv].u:"m2";return {step:one?2:1,minStep:one?2:1,sv:sv,unit:unit,qty:dq(unit),ans:{},ac:0,co:0,coTxt:"",sent:false,f:{n:"",t:"",e:"",c:"",a:false}}}
+st=fresh();
+function U(){return st.sv&&SV[st.sv].both?st.unit:(st.sv?SV[st.sv].u:"m2")}
+var ALL=["Servicio","Proyecto","Ubicación","Resultado"];
+var TIT=[["¿Qué necesita impermeabilizar?","Seleccione el servicio que mejor describe su proyecto."],["Cuéntenos sobre su proyecto","Con estos datos calculamos un rango de inversión."],["Acceso y ubicación","Influyen en la logística y preparación de la obra."],["Su estimación","Rango preliminar según los datos que nos entregó."]];
+function ev(name,extra){try{var m={dryco:"cotizador",ev:name,servicio:st.sv||"",pagina:page};for(var k in extra)m[k]=extra[k];parent.postMessage(m,"*")}catch(e){}}
+var started=false;function startEv(){if(!started){started=true;ev("cotizador_inicio")}}
+function ops(arr,sel,key){return arr.map(function(o,i){return '<div class="op'+(sel===i?' on':'')+'" data-k="'+key+'" data-i="'+i+'" role="radio" aria-checked="'+(sel===i)+'" tabindex="0"><span class="dot"></span><span>'+o[0]+(o[2]?'<span class="osub">'+o[2]+'</span>':'')+'</span></div>'}).join("")}
+function sysCards(q,sel){return '<div class="sys">'+q.o.map(function(o,i){var s=SYS[o[1].s];return '<div class="op'+(sel===i?' on':'')+'" data-k="'+q.k+'" data-i="'+i+'" role="radio" aria-checked="'+(sel===i)+'" tabindex="0"><div class="t"><span>'+s[0]+'</span><span class="dot"></span></div><span class="osub">'+s[1]+'</span></div>'}).join("")+'</div><a href="#" class="wa-l" data-wa="'+q.k+'"><i class="ti ti-brand-whatsapp" style="font-size:17px"></i>¿No sabe cuál elegir? Le orientamos por WhatsApp</a>'}
+function lab(t){return '<p class="lab">'+t+'</p>'}
+function comuna(){return st.co<REF.length?REF[st.co]:st.coTxt.trim()}
+function coef(A,T){var prev=0;for(var i=0;i<T.length;i++){if(A<=T[i][0])return Math.max(A*T[i][1],prev);prev=T[i][0]*T[i][1]}return A*T[T.length-1][1]}
+function eff(v){var r={f:1,a:0,v:null,s:"x",pool:0};v.q.forEach(function(q){var e=q.o[st.ans[q.k]||0][1];if(e.f)r.f*=e.f;if(e.a)r.a+=e.a;if(e.v&&!r.v)r.v=e.v;if(e.s)r.s=e.s;if(e.pool)r.pool=1});return r}
+function area(e){if(U()==="m2")return st.qty;var V=st.qty,h,W,L,s;if(e&&e.pool){h=1.4;W=Math.sqrt(V/h/2);L=2*W;return L*W+2*(L+W)*h}h=Math.min(2.5,Math.max(1.2,Math.cbrt(V)));s=Math.sqrt(V/h);return 2*s*s+4*s*h}
+function range(p,v,e){var A=area(e),mid=(p[0]+p[1])/2,tot=(coef(A,v.t||TIERS)*mid+A*e.a)*e.f*AC[st.ac][1],lo=tot/Math.sqrt(SPREAD);if(lo<MIN)lo=MIN;return [Math.round(lo/10000)*10000,Math.round(lo*SPREAD/10000)*10000]}
+function wa(t){window.open("https://wa.me/"+WAN+(t?"?text="+encodeURIComponent(t):""),"_blank","noopener")}
+function contactForm(){var f=st.f;return '<div class="frm"><h2>Reciba su estimación y agende la visita</h2><p class="lead">Le enviamos el detalle y lo contactamos dentro de 24 horas hábiles.</p>'+
+'<label class="fl" for="fn">Nombre <i>*</i></label><input type="text" id="fn" value="'+esc(f.n)+'" autocomplete="name" placeholder="Nombre y apellido">'+
+'<div class="g2"><div><label class="fl" for="ft">Teléfono <i>*</i></label><input type="tel" id="ft" value="'+esc(f.t)+'" autocomplete="tel" placeholder="+56 9 1234 5678"></div><div><label class="fl" for="fe">Correo</label><input type="email" id="fe" value="'+esc(f.e)+'" autocomplete="email" placeholder="nombre@correo.cl"></div></div>'+
+'<label class="fl" for="fc">Comentario (opcional)</label><textarea id="fc" placeholder="Ej: filtra en el dormitorio del nivel inferior">'+esc(f.c)+'</textarea>'+
+'<div class="hp" aria-hidden="true"><input type="text" id="web" tabindex="-1" autocomplete="off"></div>'+
+'<p style="margin:8px 0 0;font-size:12px;color:var(--tx2)"><i class="ti ti-camera" style="color:var(--nv)"></i> ¿Tiene fotos del área? Envíelas por <a href="#" id="waf" style="color:var(--ok)">WhatsApp</a>; nos ayudan a preparar la visita.</p>'+
+'<label class="chk"><input type="checkbox" id="fa"'+(f.a?' checked':'')+'>Acepto recibir información y recomendaciones de mantención de DrycoChile. Puedo darme de baja cuando quiera.</label>'+
+'<button class="bnv" id="send" type="button"><i class="ti ti-send"></i> Enviar solicitud</button><p class="err" id="ferr" role="alert"></p></div>'}
+function buildData(){var v=SV[st.sv],e=v.diag?null:eff(v),L=[],m2="";
+ L.push("Solicitud desde el cotizador web");L.push("Servicio: "+v.n+(e&&e.s!=="x"?" · "+SN[e.s].toLowerCase():""));L.push("Estimación mostrada al cliente: "+st.est);
+ if(!v.diag){var A=Math.round(area(e));if(U()==="m3"){L.push("Capacidad informada: "+st.qty+" m³");L.push("Superficie interior estimada: "+A+" m² (calculada desde la capacidad"+(e.pool?", piscina rectangular de 1,4 m de profundidad":", estanque de hasta 2,5 m de alto con fondo, muros y losa superior")+")")}else L.push("Superficie: "+A+" m²");m2=String(A);
+  v.q.forEach(function(q){var o=q.o[st.ans[q.k]||0];L.push(q.t+": "+(q.sys?SN[o[1].s]:o[0]))});L.push("Acceso: "+AC[st.ac][0])}
+ L.push("Comuna: "+comuna());if(st.f.c.trim())L.push("Comentario del cliente: "+st.f.c.trim());
+ return {nombre:st.f.n.trim(),telefono:st.f.t.trim(),email:st.f.e.trim(),tipoCliente:"",servicios:[v.f],comuna:comuna(),m2:m2,urgencia:"",mensaje:L.join("\n"),autoriza:st.f.a,web:($("web")||{}).value||"",origen:"drycochile.cl · cotizador · página "+PAGES[page][0]}}
+function call(fn,args){return fetch(EXEC,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({fn:fn,args:args}),redirect:"follow"}).then(function(r){return r.json()}).then(function(o){if(o&&o.ok)return o.r;throw new Error(o&&o.e||"ERR")})}
+function render(){
+ var s=st.step;$("err").textContent="";
+ var list=PAGES[page][1],labels=st.minStep===2?ALL.slice(1):ALL,idx=s-st.minStep;
+ $("sub").textContent=st.minStep===2?"Cotizador · "+SV[st.sv].n:"Cotizador de impermeabilización";
+ $("badge").textContent="Paso "+(idx+1)+" de "+labels.length;
+ $("stp").innerHTML=labels.map(function(l,i){var done=i<idx||st.sent,cur=i===idx&&!st.sent,last=i===labels.length-1;return '<div class="sc"><div class="sn'+(done||cur?' a':'')+'">'+(done?'<i class="ti ti-check"></i>':(i+1))+'</div><span class="sl'+(cur?' c':'')+'">'+l+'</span>'+(!last?'<div class="sb'+(done?' d':'')+'"></div>':'')+'</div>'}).join("");
+ $("hd").innerHTML=st.sent?"":'<h1>'+TIT[s-1][0]+'</h1><p class="lead">'+TIT[s-1][1]+'</p>';
+ $("back").style.visibility=s>st.minStep?"visible":"hidden";$("nav").style.display=s<4?"flex":"none";
+ var v=st.sv?SV[st.sv]:null,h="";
+ if(s===1){h='<div class="svcs">'+(list||Object.keys(SV)).map(function(k){var o=SV[k],on=st.sv===k;return '<div class="svc'+(on?' on':'')+'" data-sv="'+k+'" role="radio" aria-checked="'+on+'" tabindex="0">'+(on?'<i class="ti ti-circle-check ck"></i>':'')+'<div class="ico"><i class="ti '+o.ic+'"></i></div><b>'+o.n+'</b><small>'+o.d+'</small>'+(o.diag?'<br><span class="tag">Requiere diagnóstico</span>':'')+'</div>'}).join("")+'</div>'}
+ if(s===2&&v.diag)h='<div class="info"><i class="ti ti-info-circle"></i><div><b>'+v.n+'</b>'+v.diag+' Por eso no mostramos un rango sin diagnóstico. Continúe para solicitar la visita.</div></div>';
+ if(s===2&&!v.diag){var u=U(),un=u==="m2"?"m²":"m³",mx=u==="m2"?500:200,chips=u==="m2"?[20,50,80,150,300]:[10,25,50,100];
+  var seg=v.both?'<div class="seg" role="tablist"><button type="button" class="'+(u==="m3"?"on":"")+'" data-u="m3">Por capacidad (m³)</button><button type="button" class="'+(u==="m2"?"on":"")+'" data-u="m2">Por superficie interior (m²)</button></div><p style="margin:0 0 8px;font-size:12px;color:var(--tx2)">'+(u==="m3"?"Capacidad del estanque o piscina":"Suma de fondo, muros y losa superior")+'</p>':"";
+  h=lab(v.both?"¿Cómo prefiere cotizar?":"Superficie aproximada")+seg+'<div class="box"><div class="qrow"><div class="qin"><input type="number" id="qn" inputmode="numeric" min="1" step="1" value="'+(isNaN(st.qty)?"":st.qty)+'" aria-label="Cantidad en '+un+'"><span>'+un+'</span></div><div style="flex:1"><input type="range" id="qr" min="1" max="'+mx+'" step="1" value="'+Math.min(st.qty||1,mx)+'" aria-label="Deslizar"><div class="rl"><span>1 '+un+'</span><span>'+mx+'+ '+un+'</span></div></div></div><div class="chips">'+chips.map(function(c){return '<button type="button" class="chip" data-q="'+c+'">'+c+' '+un+'</button>'}).join("")+'</div></div>'+
+   v.q.map(function(q){return lab(q.t)+(q.sys?sysCards(q,st.ans[q.k]||0):ops(q.o,st.ans[q.k]||0,q.k))}).join("")}
+ if(s===3){h=(v.diag?"":lab("Acceso al área")+ops(AC,st.ac,"ac"))+lab("Comuna de la obra")+'<select id="co" aria-label="Comuna">'+REF.map(function(c,i){return '<option value="'+i+'"'+(st.co===i?" selected":"")+'>'+c+'</option>'}).join("")+'<option value="'+REF.length+'"'+(st.co===REF.length?" selected":"")+'>Otra comuna (escribir)</option></select>';
+  if(st.co===REF.length)h+='<input type="text" id="cot" list="rmlist" placeholder="Maipú" value="'+esc(st.coTxt)+'" style="margin-top:8px" aria-label="Escriba su comuna"><p style="margin:6px 0 0;font-size:12px;color:var(--tx2)">Escriba su comuna; le sugerimos las de la Región Metropolitana.</p>'}
+ if(s===4&&st.sent){var pila=esc(st.f.n.split(/\s+/)[0]);h='<div class="done"><div class="ic"><i class="ti ti-check"></i></div><h2>¡Gracias, '+pila+'!</h2><p>Recibimos su solicitud. Lo contactaremos dentro de las próximas 24 horas hábiles para coordinar la visita técnica.</p>'+(st.f.e?'<p>Le enviamos una confirmación a su correo.</p>':'')+'<p style="margin-top:14px"><a href="#" class="bwa" id="wa2" style="display:inline-flex;width:auto;padding:12px 18px"><i class="ti ti-brand-whatsapp"></i> ¿Es urgente? Escríbanos por WhatsApp</a></p></div>'}
+ else if(s===4){var e=v.diag?null:eff(v),cn=comuna(),out=!isRM(cn),big=v.max&&st.qty>v.max;
+  var why=v.diag||e.v||(big?"Para superficies sobre "+v.max+" m² preparamos una propuesta a medida.":null)||(out?"Para obras en "+cn+" coordinamos la visita según la ubicación y el proyecto.":null);
+  var qtxt=v.diag?"":st.qty+" "+(U()==="m2"?"m²":"m³");
+  var tags=[v.n].concat(v.diag?[]:[qtxt].concat(v.q.map(function(q){var o=q.o[st.ans[q.k]||0];return q.sys?SN[o[1].s]:o[0]}),[AC[st.ac][0]]),[cn]);
+  st.msg="Hola DrycoChile, quiero cotizar: "+tags.join(", ").toLowerCase()+(!v.diag&&U()==="m3"?" (aprox. "+Math.round(area(e))+" m² interiores)":"")+".";
+  var rng=why?null:range(v.p[e.s],v,e);
+  st.est=rng?clp(rng[0])+" – "+clp(rng[1])+" + IVA":"No se mostró precio (requiere evaluación en terreno)";
+  h='<div class="tags">'+tags.map(function(t){return '<span>'+esc(t)+'</span>'}).join("")+'</div>';
+  if(why)h+='<div class="res"><small>Su proyecto requiere evaluación en terreno</small><p class="t">'+esc(why)+' En la visita revisamos el soporte, los encuentros y los desagües, y le entregamos una propuesta con el sistema adecuado.</p></div>';
+  else h+='<div class="res"><small>Estimación preliminar'+(e.s==="x"?"":" · "+SN[e.s].toLowerCase())+'</small><p class="p">'+clp(rng[0])+' – '+clp(rng[1])+'</p><small>Valores + IVA</small></div><div class="two"><div><h3>Incluye</h3>'+["Materiales","Mano de obra","Retiro de escombros","Garantía"].map(function(t){return '<p><i class="ti ti-check" style="color:var(--ok)"></i> '+t+'</p>'}).join("")+'</div><div><h3>Se confirma en terreno</h3>'+["Estado del soporte y humedad","Encuentros y desagües","Accesos y preparación"].map(function(t){return '<p><i class="ti ti-point" style="color:var(--tx2)"></i> '+t+'</p>'}).join("")+'</div></div>';
+  h+='<button class="bwa" id="wa" type="button"><i class="ti ti-brand-whatsapp"></i> Cotizar por WhatsApp</button>'+contactForm()+'<p class="note">La visita técnica puede tener un valor según la ubicación y la complejidad del caso; se lo informamos antes de agendarla. Esta estimación no constituye una oferta.</p><div class="links"><button class="lnk" id="b4" type="button"><i class="ti ti-arrow-left"></i> Modificar datos</button><button class="lnk b" id="rs" type="button"><i class="ti ti-refresh"></i> Calcular otro proyecto</button></div>';
+  if(!st.evRes){st.evRes=1;ev("cotizador_resultado",{precio:rng?1:0})}}
+ $("body").innerHTML=h;$("main").scrollTop=0;bind()}
+function sel(el){var k=el.getAttribute("data-k"),i=+el.getAttribute("data-i");if(k==="ac")st.ac=i;else st.ans[k]=i;startEv();render()}
+function bind(){
+ [].forEach.call(document.querySelectorAll("[data-sv]"),function(el){el.onclick=function(){st.sv=el.getAttribute("data-sv");st.ans={};st.unit=SV[st.sv].u;st.qty=dq(st.unit);startEv();render()};el.onkeydown=function(x){if(x.key==="Enter"||x.key===" "){x.preventDefault();el.onclick()}}});
+ [].forEach.call(document.querySelectorAll("[data-k]"),function(el){el.onclick=function(){var y=$("main").scrollTop;sel(el);$("main").scrollTop=y};el.onkeydown=function(x){if(x.key==="Enter"||x.key===" "){x.preventDefault();el.onclick()}}});
+ [].forEach.call(document.querySelectorAll("[data-u]"),function(el){el.onclick=function(){if(st.unit!==el.getAttribute("data-u")){st.unit=el.getAttribute("data-u");st.qty=dq(st.unit);render()}}});
+ [].forEach.call(document.querySelectorAll("[data-wa]"),function(el){el.onclick=function(x){x.preventDefault();var q=SV[st.sv].q.filter(function(z){return z.k===el.getAttribute("data-wa")})[0];ev("cotizador_whatsapp");wa(q.waMsg)}});
+ [].forEach.call(document.querySelectorAll("[data-q]"),function(el){el.onclick=function(){st.qty=+el.getAttribute("data-q");$("qn").value=st.qty;$("qr").value=Math.min(st.qty,+$("qr").max);$("err").textContent="";startEv()}});
+ if($("qr")){$("qr").oninput=function(x){st.qty=+x.target.value;$("qn").value=st.qty;$("err").textContent="";startEv()};$("qn").oninput=function(x){var t=x.target.value.trim();st.qty=t===""?NaN:Math.round(+t);if(!isNaN(st.qty))$("qr").value=Math.min(Math.max(st.qty,1),+$("qr").max);$("err").textContent="";startEv()}}
+ if($("co"))$("co").onchange=function(x){st.co=+x.target.value;render();if($("cot"))$("cot").focus()};
+ if($("cot"))$("cot").oninput=function(x){st.coTxt=x.target.value;$("err").textContent=""};
+ [["fn","n"],["ft","t"],["fe","e"],["fc","c"]].forEach(function(p){if($(p[0]))$(p[0]).oninput=function(x){st.f[p[1]]=x.target.value;$("ferr").textContent=""}});
+ if($("fa"))$("fa").onchange=function(x){st.f.a=x.target.checked};
+ if($("waf"))$("waf").onclick=function(x){x.preventDefault();ev("cotizador_whatsapp");wa("Hola DrycoChile, les envío fotos del área para la cotización: "+(st.msg||""))};
+ if($("send"))$("send").onclick=send;
+ if($("wa"))$("wa").onclick=function(){ev("cotizador_whatsapp");wa(st.msg)};
+ if($("wa2"))$("wa2").onclick=function(x){x.preventDefault();ev("cotizador_whatsapp");wa("")};
+ if($("rs"))$("rs").onclick=function(){st=fresh();render()};
+ if($("b4"))$("b4").onclick=function(){st.step=3;st.evRes=0;render()}}
+function send(){var f=st.f,falta=[];if(!f.n.trim())falta.push("nombre");if(f.t.replace(/\D/g,"").length<8)falta.push("teléfono");if(f.e.trim()&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.e.trim()))falta.push("un correo válido");
+ if(falta.length){$("ferr").textContent="Por favor complete: "+falta.join(", ")+".";return}
+ var b=$("send");b.disabled=true;b.innerHTML="Enviando…";var d=buildData();
+ call("solicitud",[JSON.stringify(d)]).then(function(){st.sent=true;ev("cotizador_enviado");try{parent.postMessage({dryco:"solicitud_enviada"},"*")}catch(e){}render()},function(){b.disabled=false;b.innerHTML='<i class="ti ti-send"></i> Enviar solicitud';$("ferr").textContent="No pudimos enviar su solicitud. Inténtelo de nuevo o escríbanos por WhatsApp al +56 9 5606 9678."})}
+$("next").onclick=function(){
+ if(st.step===1&&!st.sv){$("err").textContent="Seleccione un servicio para continuar.";return}
+ if(st.step===2&&!SV[st.sv].diag&&(isNaN(st.qty)||st.qty<1)){$("err").textContent=U()==="m2"?"Ingrese la superficie en m².":"Ingrese la capacidad en m³.";return}
+ if(st.step===3&&st.co===REF.length&&st.coTxt.trim().length<3){$("err").textContent="Escriba el nombre de su comuna.";return}
+ startEv();st.step++;render()};
+$("back").onclick=function(){st.step--;st.evRes=0;render()};
+render();
+</script></body></html>
