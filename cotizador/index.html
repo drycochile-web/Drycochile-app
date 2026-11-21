@@ -103,7 +103,7 @@ var SN={pr:"Sistema premium",es:"Sistema estándar"};
 var SYS={pr:["Premium","Nuestra solución de mayor desempeño"],es:["Estándar","Solución eficiente y probada"]};
 var SV={
 terraza:{n:"Terrazas y balcones",d:"Canterías, perímetros y canaletas",ic:"ti-building-cottage",u:"m2",f:"Terrazas y balcones",p:{x:[28000,35000]},
- q:[{k:"est",t:"Estado actual",o:[["Mantención preventiva, sin filtración",{}],["Filtra hacia el nivel inferior",{}],["Cerámicas sueltas o quebradas",{f:1.15}],["Requiere demolición e instalación de nuevo revestimiento",{v:"La demolición e instalación de nuevo revestimiento se evalúa en terreno."}]]},
+ q:[{k:"est",t:"Estado actual",o:[["Mantención preventiva, sin filtración",{}],["Filtra hacia el nivel inferior",{}],["Cerámicas sueltas o quebradas",{f:1.15}],["Requiere demolición e instalación de nuevo revestimiento",{p:[95000,115000]},"Revestimiento nuevo provisto por el cliente"]]},
  {k:"rev",t:"Revestimiento",o:[["Cerámica o porcelanato",{}],["Piedra o pizarra",{f:1.15}]]}]},
 techo:{n:"Techos y azoteas",d:"Losas, cubiertas planas y metálicas",ic:"ti-home",u:"m2",f:"Cubiertas y techos",p:{pr:[40000,50000],es:[22000,28000]},t:[[10,2],[20,1.75],[40,1.15],[100,1],[200,0.9],[500,0.8]],max:500,
  q:[{k:"tipo",t:"Superficie del techo",o:[["Losa de hormigón o cubierta plana",{},"Incluye cubiertas con revestimiento metálico (PV4 / PV5)"],["Superficie con membrana asfáltica",{}]]},
@@ -142,7 +142,7 @@ function sysCards(q,sel){return '<div class="sys">'+q.o.map(function(o,i){var s=
 function lab(t){return '<p class="lab">'+t+'</p>'}
 function comuna(){return st.co<REF.length?REF[st.co]:st.coTxt.trim()}
 function coef(A,T){var prev=0;for(var i=0;i<T.length;i++){if(A<=T[i][0])return Math.max(A*T[i][1],prev);prev=T[i][0]*T[i][1]}return A*T[T.length-1][1]}
-function eff(v){var r={f:1,a:0,v:null,s:"x",pool:0};v.q.forEach(function(q){var e=q.o[st.ans[q.k]||0][1];if(e.f)r.f*=e.f;if(e.a)r.a+=e.a;if(e.v&&!r.v)r.v=e.v;if(e.s)r.s=e.s;if(e.pool)r.pool=1});return r}
+function eff(v){var r={f:1,a:0,v:null,s:"x",pool:0};v.q.forEach(function(q){var e=q.o[st.ans[q.k]||0][1];if(e.f)r.f*=e.f;if(e.a)r.a+=e.a;if(e.v&&!r.v)r.v=e.v;if(e.s)r.s=e.s;if(e.pool)r.pool=1;if(e.p)r.p=e.p});return r}
 function area(e){if(U()==="m2")return st.qty;var V=st.qty,h,W,L,s;if(e&&e.pool){h=1.4;W=Math.sqrt(V/h/2);L=2*W;return L*W+2*(L+W)*h}h=Math.min(2.5,Math.max(1.2,Math.cbrt(V)));s=Math.sqrt(V/h);return 2*s*s+4*s*h}
 function range(p,v,e){var A=area(e),mid=(p[0]+p[1])/2,tot=(coef(A,v.t||TIERS)*mid+A*e.a)*e.f*AC[st.ac][1],lo=tot/Math.sqrt(SPREAD);if(lo<MIN)lo=MIN;return [Math.round(lo/10000)*10000,Math.round(lo*SPREAD/10000)*10000]}
 function wa(t){window.open("https://wa.me/"+WAN+(t?"?text="+encodeURIComponent(t):""),"_blank","noopener")}
@@ -194,7 +194,7 @@ function render(){
   var qtxt=v.diag?"":st.qty+" "+(U()==="m2"?"m²":"m³");
   var tags=[v.n].concat(v.diag?[]:[qtxt].concat(v.q.map(function(q){var o=q.o[st.ans[q.k]||0];return q.sys?SN[o[1].s]:o[0]}),[AC[st.ac][0]]),[cn]);
   st.msg="Hola DrycoChile, quiero cotizar: "+tags.join(", ").toLowerCase()+(!v.diag&&U()==="m3"?" (aprox. "+Math.round(area(e))+" m² interiores)":"")+".";
-  var rng=why?null:range(v.p[e.s],v,e);
+  var rng=why?null:range(e.p||v.p[e.s],v,e);
   st.est=rng?clp(rng[0])+" – "+clp(rng[1])+" + IVA":"No se mostró precio (requiere evaluación en terreno)";
   h='<div class="tags">'+tags.map(function(t){return '<span>'+esc(t)+'</span>'}).join("")+'</div>';
   if(why)h+='<div class="res"><small>Su proyecto requiere evaluación en terreno</small><p class="t">'+esc(why)+' En la visita revisamos el soporte, los encuentros y los desagües, y le entregamos una propuesta con el sistema adecuado.</p></div>';
