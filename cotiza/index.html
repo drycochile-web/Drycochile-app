@@ -1,7 +1,7 @@
 <!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0B1630">
-<title>Solicite su visita técnica · Dryco Chile</title><link rel="icon" type="image/png" href="../icons/favicon-32.png">
-<meta name="description" content="Solicite una visita técnica y cotización de impermeabilización con Dryco Chile. Respuesta en menos de 24 horas.">
+<title>Solicite su visita técnica · DrycoChile</title><link rel="icon" type="image/png" href="../icons/favicon-32.png">
+<meta name="description" content="Solicite una visita técnica y cotización de impermeabilización con DrycoChile. Respuesta en menos de 24 horas.">
 <style>
 :root{--navy:#0B1630;--ink:#0D1B2E;--mut:#5B6B80;--line:#D7DFEA;--acc:#1F5CA1;--soft:#F3F6FB;--ok:#16865A;--bad:#C2362F}
 *{box-sizing:border-box}html,body{margin:0}body{background:#EEF2F8;color:var(--ink);font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:15px;line-height:1.45}
@@ -24,51 +24,54 @@ button{width:100%;margin-top:18px;border:0;border-radius:12px;background:var(--a
 .done{text-align:center;padding:26px 10px}.done .ic{width:56px;height:56px;border-radius:50%;background:#E5F5EE;color:var(--ok);display:grid;place-items:center;margin:0 auto 10px;font-size:30px}
 .done h2{margin:6px 0;font-size:21px}.done p{color:var(--mut);margin:6px 0}.done a{display:inline-block;margin-top:14px;background:#25A244;color:#fff;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:12px}
 .foot{text-align:center;color:var(--mut);font-size:12.5px;padding:12px 0 26px}body.embed .foot{display:none}
+.co{display:none}body.corto .co{display:block}
 @media (max-width:560px){.g{grid-template-columns:1fr}}
+@media (min-width:420px){body.corto .g{grid-template-columns:1fr 1fr}}
 </style></head><body>
-<div class="top"><div class="w" style="padding:0 0 0"><img src="../icons/logo-blanco.png" alt="Dryco Chile"><h1>Solicite su visita técnica y cotización</h1><p>Respuesta técnica en menos de 24 horas · Diagnóstico en terreno sin compromiso</p></div></div>
+<div class="top"><div class="w" style="padding:0 0 0"><img src="../icons/logo-blanco.png" alt="DrycoChile"><h1>Solicite su visita técnica y cotización</h1><p>Respuesta técnica en menos de 24 horas · Diagnóstico en terreno sin compromiso</p></div></div>
 <div class="w"><div class="card" id="box">
 <form id="f" novalidate>
 <div class="g">
  <div><label for="nombre">Nombre y apellido <i>*</i></label><input id="nombre" name="nombre" autocomplete="name" required maxlength="80"></div>
  <div><label for="telefono">Teléfono / WhatsApp <i>*</i></label><input id="telefono" name="telefono" type="tel" autocomplete="tel" inputmode="tel" placeholder="+56 9" required maxlength="30"></div>
- <div class="lg"><label for="email">Correo electrónico</label><input id="email" name="email" type="email" autocomplete="email" maxlength="120"></div>
+ <div><label for="email">Correo electrónico</label><input id="email" name="email" type="email" autocomplete="email" maxlength="120"></div>
  <div class="lg"><label for="tipoCliente">Tipo de cliente</label><select id="tipoCliente" name="tipoCliente"><option value="">Seleccione</option><option>Comunidad o edificio</option><option>Empresa o industria</option><option>Particular</option></select></div>
  <div class="full lg"><label>Servicio que necesita (puede marcar varios) <i>*</i></label><div class="chips" id="servicios">
   <label><input type="checkbox" value="Cubiertas y techos">Cubiertas y techos</label><label><input type="checkbox" value="Terrazas y balcones">Terrazas y balcones</label>
   <label><input type="checkbox" value="Hormigón y estanques">Hormigón y estanques</label><label><input type="checkbox" value="Subterráneos y estacionamientos">Subterráneos y estacionamientos</label>
   <label><input type="checkbox" value="Salas técnicas e industriales">Salas técnicas e industriales</label><label><input type="checkbox" value="No estoy seguro, necesito un diagnóstico">No estoy seguro, necesito un diagnóstico</label></div></div>
  <div><label for="comuna">Comuna de la obra <i>*</i></label><input id="comuna" name="comuna" autocomplete="address-level2" required maxlength="60"></div>
+ <div class="co full"><label for="servCorto">Servicio que necesita <i>*</i></label><select id="servCorto" name="servCorto"><option value="">Seleccione</option><option>Terrazas y balcones</option><option>Cubiertas y techos</option><option>Hormigón y estanques</option><option>Subterráneos y estacionamientos</option><option>Salas técnicas e industriales</option><option>No estoy seguro, necesito un diagnóstico</option></select></div>
  <div class="lg"><label for="m2">Superficie aproximada en m²</label><input id="m2" name="m2" inputmode="decimal" maxlength="20"></div>
  <div class="full lg"><label for="urgencia">¿Cuándo necesita el trabajo?</label><select id="urgencia" name="urgencia"><option value="">Seleccione</option><option>Tengo una filtración activa</option><option>Dentro del próximo mes</option><option>Estoy planificando o cotizando</option></select></div>
  <div class="full lg"><label for="mensaje">Describa el problema <i>*</i></label><textarea id="mensaje" name="mensaje" maxlength="2000" placeholder="Dónde aparece la filtración o humedad, desde cuándo, tipo de superficie…"></textarea></div>
 </div>
 <div class="hp" aria-hidden="true"><label for="web">Sitio web</label><input id="web" name="web" tabindex="-1" autocomplete="off"></div>
-<label class="chk lg"><input type="checkbox" id="autoriza">Acepto recibir información y recomendaciones de mantención de Dryco Chile. Puedo darme de baja cuando quiera.</label>
+<label class="chk lg"><input type="checkbox" id="autoriza">Acepto recibir información y recomendaciones de mantención de DrycoChile. Puedo darme de baja cuando quiera.</label>
 <button type="submit" id="go">Solicitar visita técnica y cotización</button>
 <div class="err" id="err" role="alert"></div>
 </form></div>
-<div class="foot">Dryco Chile SpA · +56 9 5606 9678 · contacto@drycochile.cl</div></div>
+<div class="foot">Drycochile SpA · +56 9 5606 9678 · contacto@drycochile.cl</div></div>
 <script>
 var EXEC="https://script.google.com/macros/s/AKfycbzhS66Ekgyq2HF7yVkoACSj7WFBG5AD1Hyj1h0sC_NCJdzKDqi_niiHfNk-gMDgZKzHdA/exec";
 /* Conversión de Google Ads (opcional): completar con el ID y la etiqueta de la conversión, p. ej. {id:"AW-123",label:"abc"} */
 var CONV=null;
 var Q=new URLSearchParams(location.search),CORTO=Q.get("corto")==="1";
 if(Q.get("embed")==="1")document.body.classList.add("embed");
-if(CORTO){[].forEach.call(document.querySelectorAll(".lg"),function(e){e.style.display="none"})}
+if(CORTO){document.body.classList.add("corto");[].forEach.call(document.querySelectorAll(".lg"),function(e){e.style.display="none"})}
 var SERV={salas:"Salas técnicas e industriales",techos:"Cubiertas y techos",terrazas:"Terrazas y balcones",hormigon:"Hormigón y estanques",estacionamientos:"Subterráneos y estacionamientos",diagnostico:"No estoy seguro, necesito un diagnóstico"};
 var PAG=(Q.get("pagina")||"").replace(/[<>"&]/g,"").slice(0,60);
-(Q.get("servicio")||"").split(",").forEach(function(k){var val=SERV[k.trim()];if(!val)return;[].forEach.call(document.querySelectorAll("#servicios input"),function(x){if(x.value===val)x.checked=true})});
+(Q.get("servicio")||"").split(",").forEach(function(k){var val=SERV[k.trim()];if(!val)return;[].forEach.call(document.querySelectorAll("#servicios input"),function(x){if(x.value===val)x.checked=true});var sc=document.getElementById("servCorto");if(sc&&!sc.value)sc.value=val});
 function call(fn,args){return fetch(EXEC,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({fn:fn,args:args}),redirect:"follow"}).then(function(r){return r.json()}).then(function(o){if(o&&o.ok)return o.r;throw new Error(o&&o.e||"ERR")})}
 function v(id){return (document.getElementById(id).value||"").trim()}
 function height(){try{parent.postMessage({dryco:"altura",h:document.documentElement.scrollHeight},"*")}catch(e){}}
 window.addEventListener("load",height);window.addEventListener("resize",height);
 if(CONV&&CONV.id){var s=document.createElement("script");s.async=1;s.src="https://www.googletagmanager.com/gtag/js?id="+CONV.id;document.head.appendChild(s);window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};gtag("js",new Date());gtag("config",CONV.id)}
 document.getElementById("f").addEventListener("submit",function(e){e.preventDefault();var err=document.getElementById("err");err.textContent="";
-  var serv=[].map.call(document.querySelectorAll("#servicios input:checked"),function(x){return x.value});
+  var serv=[].map.call(document.querySelectorAll("#servicios input:checked"),function(x){return x.value});if(CORTO){serv=v("servCorto")?[v("servCorto")]:[]}
   var d={nombre:v("nombre"),telefono:v("telefono"),email:v("email"),tipoCliente:v("tipoCliente"),servicios:serv,comuna:v("comuna"),m2:v("m2"),urgencia:v("urgencia"),mensaje:v("mensaje"),autoriza:document.getElementById("autoriza").checked,web:v("web"),origen:(PAG?"drycochile.cl · página "+PAG:(CORTO?"drycochile.cl · formulario de inicio":"drycochile.cl · página Cotiza aquí"))};
   if(CORTO&&!d.mensaje)d.mensaje="Solicitud desde el formulario breve de la página de inicio.";
-  var falta=[];if(!d.nombre)falta.push("nombre");if(d.telefono.replace(/\D/g,"").length<8)falta.push("teléfono");if(!CORTO&&!serv.length)falta.push("servicio");if(!d.comuna)falta.push("comuna");if(!d.mensaje)falta.push("descripción del problema");
+  var falta=[];if(!d.nombre)falta.push("nombre");if(d.telefono.replace(/\D/g,"").length<8)falta.push("teléfono");if(!serv.length)falta.push("servicio");if(!d.comuna)falta.push("comuna");if(!d.mensaje)falta.push("descripción del problema");
   if(d.email&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email))falta.push("un correo válido");
   if(falta.length){err.textContent="Por favor complete: "+falta.join(", ")+".";height();return}
   var b=document.getElementById("go");b.disabled=true;b.textContent="Enviando…";
