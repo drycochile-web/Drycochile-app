@@ -83,6 +83,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .trust{background:#F5F7FA;border-top:1px solid var(--ln);padding:10px 20px;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--tx2);flex:none}.trust i{color:var(--nv)}
 .done{text-align:center;padding:24px 8px}.done .ic{width:56px;height:56px;border-radius:50%;background:#E6F6EC;color:var(--ok);display:inline-flex;align-items:center;justify-content:center;font-size:28px}
 .done h2{font-size:20px;margin:14px 0 6px}.done p{font-size:14px;color:var(--tx2);line-height:1.6;margin:0 0 6px}
+.up{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:1.5px dashed #B8C6D8;border-radius:10px;padding:14px;background:#fff;cursor:pointer;text-align:center}.up:hover{border-color:var(--nv);background:#F6F9FD}.phs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px}.ph{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;border:1px solid var(--ln);background:#F1F4F8}.ph img{width:100%;height:100%;object-fit:cover;display:block}.ph button{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(11,42,74,.85);color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}.ph.ld{display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--tx2)}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 @media (max-width:520px){.svcs{grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}.svc{padding:10px}.svc.on{padding:9px}.svc b{font-size:13px;margin:8px 0 2px}.svc small{font-size:11px;line-height:1.35;display:block}.ico{width:32px;height:32px;font-size:17px}.tag{margin-top:6px;font-size:10.5px}.svc .ck{top:8px;right:8px;font-size:16px}.hdr{padding:14px 16px}.main{padding:16px 16px 8px}.nav{padding:10px 16px}.sl{display:none}.sl.c{display:inline}.two,.g2{grid-template-columns:1fr}.res .p{font-size:24px}.qin{width:120px}.trust{display:none}}
 </style></head><body>
@@ -129,7 +130,7 @@ function $(id){return document.getElementById(id)}
 function clp(v){return "$"+Math.round(v).toLocaleString("es-CL")}
 function dq(u){return u==="m3"?25:50}
 var st;
-function fresh(){var list=PAGES[page][1],one=list&&list.length===1,sv=one?list[0]:null,unit=sv?SV[sv].u:"m2";return {step:one?2:1,minStep:one?2:1,sv:sv,unit:unit,qty:dq(unit),ans:{},ac:0,co:0,coTxt:"",sent:false,f:{n:"",t:"",e:"",c:"",a:false}}}
+function fresh(){var list=PAGES[page][1],one=list&&list.length===1,sv=one?list[0]:null,unit=sv?SV[sv].u:"m2";return {step:one?2:1,minStep:one?2:1,sv:sv,unit:unit,qty:dq(unit),ans:{},ac:0,co:0,coTxt:"",sent:false,f:{n:"",t:"",e:"",c:"",a:false,ph:[]}}}
 st=fresh();
 function U(){return st.sv&&SV[st.sv].both?st.unit:(st.sv?SV[st.sv].u:"m2")}
 var ALL=["Servicio","Proyecto","Ubicación","Resultado"];
@@ -145,12 +146,19 @@ function eff(v){var r={f:1,a:0,v:null,s:"x",pool:0};v.q.forEach(function(q){var 
 function area(e){if(U()==="m2")return st.qty;var V=st.qty,h,W,L,s;if(e&&e.pool){h=1.4;W=Math.sqrt(V/h/2);L=2*W;return L*W+2*(L+W)*h}h=Math.min(2.5,Math.max(1.2,Math.cbrt(V)));s=Math.sqrt(V/h);return 2*s*s+4*s*h}
 function range(p,v,e){var A=area(e),mid=(p[0]+p[1])/2,tot=(coef(A,v.t||TIERS)*mid+A*e.a)*e.f*AC[st.ac][1],lo=tot/Math.sqrt(SPREAD);if(lo<MIN)lo=MIN;return [Math.round(lo/10000)*10000,Math.round(lo*SPREAD/10000)*10000]}
 function wa(t){window.open("https://wa.me/"+WAN+(t?"?text="+encodeURIComponent(t):""),"_blank","noopener")}
+var MAXF=5,busy=0;
+function photos(){var ph=st.f.ph;return '<label class="fl">Fotos del área (opcional, hasta '+MAXF+')</label>'+(ph.length<MAXF?'<label class="up" for="fp"><i class="ti ti-camera-plus" style="font-size:24px;color:var(--nv)"></i><span style="font-size:13px;font-weight:600">Agregar fotos</span><span style="font-size:11px;color:#8A97A6">Desde su celular o computador</span></label><input type="file" id="fp" accept="image/*" multiple style="display:none">':'')+(ph.length||busy?'<div class="phs">'+ph.map(function(p,i){return '<div class="ph"><img src="'+p.thumb+'" alt="Foto '+(i+1)+' del área"><button type="button" data-rm="'+i+'" aria-label="Quitar foto"><i class="ti ti-x"></i></button></div>'}).join("")+(busy?'<div class="ph ld">Cargando…</div>':'')+'</div>':'')+'<p style="margin:6px 0 0;font-size:11px;color:#8A97A6">Las fotos nos ayudan a preparar mejor la visita técnica.</p>'}
+function shrink(file){return new Promise(function(ok,ko){var u=URL.createObjectURL(file),im=new Image();im.onload=function(){try{var M=1600,w=im.naturalWidth,h=im.naturalHeight,k=Math.min(1,M/Math.max(w,h)),c=document.createElement("canvas");c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);var d=c.toDataURL("image/jpeg",0.8);var t=document.createElement("canvas"),tk=Math.min(1,200/Math.max(w,h));t.width=Math.round(w*tk);t.height=Math.round(h*tk);t.getContext("2d").drawImage(im,0,0,t.width,t.height);URL.revokeObjectURL(u);ok({type:"image/jpeg",data:d.split(",")[1],thumb:t.toDataURL("image/jpeg",0.7)})}catch(e){URL.revokeObjectURL(u);ko(e)}};im.onerror=function(){URL.revokeObjectURL(u);ko(new Error("read"))};im.src=u})}
+function refreshPh(){if($("phbox")){$("phbox").innerHTML=photos();bindPh()}}
+function bindPh(){var inp=$("fp");if(inp)inp.onchange=function(x){var files=[].slice.call(x.target.files||[]),room=MAXF-st.f.ph.length,bad=0;if(files.length>room)$("ferr").textContent="Puede adjuntar hasta "+MAXF+" fotos.";files=files.slice(0,room);if(!files.length)return;busy=files.length;refreshPh();
+  files.reduce(function(pr,f){return pr.then(function(){return shrink(f).then(function(r){st.f.ph.push(r)},function(){bad++}).then(function(){busy--;refreshPh()})})},Promise.resolve()).then(function(){if(bad)$("ferr").textContent="No pudimos leer "+(bad>1?bad+" fotos":"una foto")+". Pruebe con una foto en formato JPG o PNG."})};
+ [].forEach.call(document.querySelectorAll("[data-rm]"),function(b){b.onclick=function(x){x.preventDefault();st.f.ph.splice(+b.getAttribute("data-rm"),1);refreshPh()}})}
 function contactForm(){var f=st.f;return '<div class="frm"><h2>Reciba su estimación y agende la visita</h2><p class="lead">Le enviamos el detalle y lo contactamos dentro de 24 horas hábiles.</p>'+
 '<label class="fl" for="fn">Nombre <i>*</i></label><input type="text" id="fn" value="'+esc(f.n)+'" autocomplete="name" placeholder="Nombre y apellido">'+
 '<div class="g2"><div><label class="fl" for="ft">Teléfono <i>*</i></label><input type="tel" id="ft" value="'+esc(f.t)+'" autocomplete="tel" placeholder="+56 9 1234 5678"></div><div><label class="fl" for="fe">Correo</label><input type="email" id="fe" value="'+esc(f.e)+'" autocomplete="email" placeholder="nombre@correo.cl"></div></div>'+
 '<label class="fl" for="fc">Comentario (opcional)</label><textarea id="fc" placeholder="Ej: filtra en el dormitorio del nivel inferior">'+esc(f.c)+'</textarea>'+
 '<div class="hp" aria-hidden="true"><input type="text" id="web" tabindex="-1" autocomplete="off"></div>'+
-'<p style="margin:8px 0 0;font-size:12px;color:var(--tx2)"><i class="ti ti-camera" style="color:var(--nv)"></i> ¿Tiene fotos del área? Envíelas por <a href="#" id="waf" style="color:var(--ok)">WhatsApp</a>; nos ayudan a preparar la visita.</p>'+
+'<div id="phbox">'+photos()+'</div>'+
 '<label class="chk"><input type="checkbox" id="fa"'+(f.a?' checked':'')+'>Acepto recibir información y recomendaciones de mantención de DrycoChile. Puedo darme de baja cuando quiera.</label>'+
 '<button class="bnv" id="send" type="button"><i class="ti ti-send"></i> Enviar solicitud</button><p class="err" id="ferr" role="alert"></p></div>'}
 function buildData(){var v=SV[st.sv],e=v.diag?null:eff(v),L=[],m2="";
@@ -160,7 +168,8 @@ function buildData(){var v=SV[st.sv],e=v.diag?null:eff(v),L=[],m2="";
   v.q.forEach(function(q){var o=q.o[st.ans[q.k]||0];L.push(q.t+": "+(q.sys?SN[o[1].s]:o[0]))});L.push("Acceso: "+AC[st.ac][0])}
  else L.push(v.n+": requiere diagnóstico en terreno");
  if(st.f.c.trim())L.push("Comentario del cliente: "+st.f.c.trim());
- return {nombre:st.f.n.trim(),telefono:st.f.t.trim(),email:st.f.e.trim(),tipoCliente:"",servicios:[v.f],comuna:comuna(),m2:m2,urgencia:"",mensaje:L.join(" · "),autoriza:st.f.a,web:($("web")||{}).value||"",origen:"drycochile.cl · cotizador · página "+PAGES[page][0]}}
+ if(st.f.ph.length)L.push("Fotos enviadas: "+st.f.ph.length);
+ return {nombre:st.f.n.trim(),telefono:st.f.t.trim(),email:st.f.e.trim(),tipoCliente:"",servicios:[v.f],comuna:comuna(),m2:m2,urgencia:"",mensaje:L.join(" · "),autoriza:st.f.a,web:($("web")||{}).value||"",origen:"drycochile.cl · cotizador · página "+PAGES[page][0],fotos:st.f.ph.map(function(p){return {type:p.type,data:p.data}})}}
 function call(fn,args){return fetch(EXEC,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({fn:fn,args:args}),redirect:"follow"}).then(function(r){return r.json()}).then(function(o){if(o&&o.ok)return o.r;throw new Error(o&&o.e||"ERR")})}
 function render(){
  var s=st.step;$("err").textContent="";
@@ -205,7 +214,7 @@ function bind(){
  if($("cot"))$("cot").oninput=function(x){st.coTxt=x.target.value;$("err").textContent=""};
  [["fn","n"],["ft","t"],["fe","e"],["fc","c"]].forEach(function(p){if($(p[0]))$(p[0]).oninput=function(x){st.f[p[1]]=x.target.value;$("ferr").textContent=""}});
  if($("fa"))$("fa").onchange=function(x){st.f.a=x.target.checked};
- if($("waf"))$("waf").onclick=function(x){x.preventDefault();ev("cotizador_whatsapp");wa("Hola DrycoChile, les envío fotos del área para la cotización: "+(st.msg||""))};
+ bindPh();
  if($("send"))$("send").onclick=send;
  if($("wa"))$("wa").onclick=function(){ev("cotizador_whatsapp");wa(st.msg)};
  if($("wa2"))$("wa2").onclick=function(x){x.preventDefault();ev("cotizador_whatsapp");wa("")};
@@ -213,7 +222,8 @@ function bind(){
  if($("b4"))$("b4").onclick=function(){st.step=3;st.evRes=0;render()}}
 function send(){var f=st.f,falta=[];if(!f.n.trim())falta.push("nombre");if(f.t.replace(/\D/g,"").length<8)falta.push("teléfono");if(f.e.trim()&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.e.trim()))falta.push("un correo válido");
  if(falta.length){$("ferr").textContent="Por favor complete: "+falta.join(", ")+".";return}
- var b=$("send");b.disabled=true;b.innerHTML="Enviando…";var d=buildData();
+ if(busy){$("ferr").textContent="Espere a que terminen de cargar las fotos.";return}
+ var b=$("send");b.disabled=true;b.innerHTML=st.f.ph.length?"Enviando solicitud y fotos…":"Enviando…";var d=buildData();
  call("solicitud",[JSON.stringify(d)]).then(function(){st.sent=true;ev("cotizador_enviado");try{parent.postMessage({dryco:"solicitud_enviada"},"*")}catch(e){}render()},function(){b.disabled=false;b.innerHTML='<i class="ti ti-send"></i> Enviar solicitud';$("ferr").textContent="No pudimos enviar su solicitud. Inténtelo de nuevo o escríbanos por WhatsApp al +56 9 5606 9678."})}
 $("next").onclick=function(){
  if(st.step===1&&!st.sv){$("err").textContent="Seleccione un servicio para continuar.";return}
