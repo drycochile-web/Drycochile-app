@@ -25,7 +25,7 @@ body.embed #dc{margin:0;max-height:100vh;max-width:none;border:0;border-radius:1
 h1{margin:0;font-size:20px;font-weight:600}.lead{margin:4px 0 6px;font-size:13px;color:var(--tx2)}
 .lab{margin:18px 0 8px;font-size:13px;font-weight:600;color:var(--tx2)}
 .op{display:flex;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--ln);border-radius:10px;margin-bottom:8px;cursor:pointer;background:#fff;user-select:none}
-.op:hover{border-color:#B8C6D8}.op.on{border-color:var(--nv);background:var(--blt)}
+.op:hover{border-color:#B8C6D8}.op.on{border-color:var(--nv);background:var(--blt)}.op[role=checkbox] .dot{border-radius:5px}.op[role=checkbox] .dot::after{border-radius:2px}
 .op:focus-visible,.svc:focus-visible,button:focus-visible{outline:2px solid #1F6FD1;outline-offset:2px}
 .dot{width:18px;height:18px;border-radius:50%;border:1.5px solid #9AA8B8;flex:none;display:flex;align-items:center;justify-content:center;background:#fff}
 .on .dot{border-color:var(--nv)}.on .dot::after{content:'';width:9px;height:9px;border-radius:50%;background:var(--nv)}
@@ -103,7 +103,7 @@ var SN={pr:"Sistema premium",es:"Sistema estándar"};
 var SYS={pr:["Premium","Nuestra solución de mayor desempeño"],es:["Estándar","Solución eficiente y probada"]};
 var SV={
 terraza:{n:"Terrazas y balcones",d:"Canterías, perímetros y canaletas",ic:"ti-building-cottage",u:"m2",f:"Terrazas y balcones",p:{x:[28000,35000]},
- q:[{k:"est",t:"Estado actual",o:[["Mantención preventiva, sin filtración",{}],["Filtra hacia el nivel inferior",{}],["Cerámicas sueltas o quebradas",{f:1.15}],["Requiere demolición e instalación de nuevo revestimiento",{p:[95000,115000]},"Revestimiento nuevo provisto por el cliente"]]},
+ q:[{k:"est",t:"Estado actual",m:[1,2],o:[["Mantención preventiva, sin filtración",{}],["Filtra hacia el nivel inferior",{}],["Cerámicas sueltas o quebradas",{f:1.15}],["Requiere demolición e instalación de nuevo revestimiento",{p:[95000,115000]},"Revestimiento nuevo provisto por el cliente"]]},
  {k:"rev",t:"Revestimiento",o:[["Cerámica o porcelanato",{}],["Piedra o pizarra",{f:1.15}]]}]},
 techo:{n:"Techos y azoteas",d:"Losas, cubiertas planas y metálicas",ic:"ti-home",u:"m2",f:"Cubiertas y techos",p:{pr:[40000,50000],es:[22000,28000]},t:[[10,2],[20,1.75],[40,1.15],[100,1],[200,0.9],[500,0.8]],max:500,
  q:[{k:"tipo",t:"Superficie del techo",o:[["Losa de hormigón o cubierta plana",{},"Incluye cubiertas con revestimiento metálico (PV4 / PV5)"],["Superficie con membrana asfáltica",{}]]},
@@ -137,12 +137,12 @@ var ALL=["Servicio","Proyecto","Ubicación","Resultado"];
 var TIT=[["¿Qué necesita impermeabilizar?","Seleccione el servicio que mejor describe su proyecto."],["Cuéntenos sobre su proyecto","Con estos datos calculamos un rango de inversión."],["Acceso y ubicación","Influyen en la logística y preparación de la obra."],["Su estimación","Rango preliminar según los datos que nos entregó."]];
 function ev(name,extra){try{var m={dryco:"cotizador",ev:name,servicio:st.sv||"",pagina:page};for(var k in extra)m[k]=extra[k];parent.postMessage(m,"*")}catch(e){}}
 var started=false;function startEv(){if(!started){started=true;ev("cotizador_inicio")}}
-function ops(arr,sel,key){return arr.map(function(o,i){return '<div class="op'+(sel===i?' on':'')+'" data-k="'+key+'" data-i="'+i+'" role="radio" aria-checked="'+(sel===i)+'" tabindex="0"><span class="dot"></span><span>'+o[0]+(o[2]?'<span class="osub">'+o[2]+'</span>':'')+'</span></div>'}).join("")}
+function ops(arr,sel,key,mm){var S=[].concat(sel);mm=mm||[];return arr.map(function(o,i){var on=S.indexOf(i)>-1,cb=mm.indexOf(i)>-1;return '<div class="op'+(on?' on':'')+'" data-k="'+key+'" data-i="'+i+'" role="'+(cb?'checkbox':'radio')+'" aria-checked="'+on+'" tabindex="0"><span class="dot"></span><span>'+o[0]+(o[2]?'<span class="osub">'+o[2]+'</span>':'')+'</span></div>'}).join("")}
 function sysCards(q,sel){return '<div class="sys">'+q.o.map(function(o,i){var s=SYS[o[1].s];return '<div class="op'+(sel===i?' on':'')+'" data-k="'+q.k+'" data-i="'+i+'" role="radio" aria-checked="'+(sel===i)+'" tabindex="0"><div class="t"><span>'+s[0]+'</span><span class="dot"></span></div><span class="osub">'+s[1]+'</span></div>'}).join("")+'</div><a href="#" class="wa-l" data-wa="'+q.k+'"><i class="ti ti-brand-whatsapp" style="font-size:17px"></i>¿No sabe cuál elegir? Le orientamos por WhatsApp</a>'}
 function lab(t){return '<p class="lab">'+t+'</p>'}
 function comuna(){return st.co<REF.length?REF[st.co]:st.coTxt.trim()}
 function coef(A,T){var prev=0;for(var i=0;i<T.length;i++){if(A<=T[i][0])return Math.max(A*T[i][1],prev);prev=T[i][0]*T[i][1]}return A*T[T.length-1][1]}
-function eff(v){var r={f:1,a:0,v:null,s:"x",pool:0};v.q.forEach(function(q){var e=q.o[st.ans[q.k]||0][1];if(e.f)r.f*=e.f;if(e.a)r.a+=e.a;if(e.v&&!r.v)r.v=e.v;if(e.s)r.s=e.s;if(e.pool)r.pool=1;if(e.p)r.p=e.p});return r}
+function sels(q){var a=st.ans[q.k];return Array.isArray(a)?a:[a||0]} function otx(q){return sels(q).map(function(i){return q.o[i][0]}).join(" + ")} function eff(v){var r={f:1,a:0,v:null,s:"x",pool:0};v.q.forEach(function(q){sels(q).forEach(function(i){var e=q.o[i][1];if(e.f)r.f*=e.f;if(e.a)r.a+=e.a;if(e.v&&!r.v)r.v=e.v;if(e.s)r.s=e.s;if(e.pool)r.pool=1;if(e.p)r.p=e.p})});return r}
 function area(e){if(U()==="m2")return st.qty;var V=st.qty,h,W,L,s;if(e&&e.pool){h=1.4;W=Math.sqrt(V/h/2);L=2*W;return L*W+2*(L+W)*h}h=Math.min(2.5,Math.max(1.2,Math.cbrt(V)));s=Math.sqrt(V/h);return 2*s*s+4*s*h}
 function range(p,v,e){var A=area(e),mid=(p[0]+p[1])/2,tot=(coef(A,v.t||TIERS)*mid+A*e.a)*e.f*AC[st.ac][1],lo=tot/Math.sqrt(SPREAD);if(lo<MIN)lo=MIN;return [Math.round(lo/10000)*10000,Math.round(lo*SPREAD/10000)*10000]}
 function wa(t){window.open("https://wa.me/"+WAN+(t?"?text="+encodeURIComponent(t):""),"_blank","noopener")}
@@ -165,7 +165,7 @@ function buildData(){var v=SV[st.sv],e=v.diag?null:eff(v),L=[],m2="";
  L.push("COTIZADOR WEB");L.push("Estimación mostrada al cliente: "+st.est);
  if(!v.diag){var A=Math.round(area(e));m2=String(A);
   if(U()==="m3")L.push("Capacidad informada: "+st.qty+" m³ = "+A+" m² de superficie interior estimada ("+(e.pool?"piscina rectangular de 1,4 m de profundidad":"estanque de hasta 2,5 m de alto con fondo, muros y losa superior")+")");
-  v.q.forEach(function(q){var o=q.o[st.ans[q.k]||0];L.push(q.t+": "+(q.sys?SN[o[1].s]:o[0]))});L.push("Acceso: "+AC[st.ac][0])}
+  v.q.forEach(function(q){var o=q.o[st.ans[q.k]||0];L.push(q.t+": "+(q.sys?SN[o[1].s]:otx(q)))});L.push("Acceso: "+AC[st.ac][0])}
  else L.push(v.n+": requiere diagnóstico en terreno");
  if(st.f.c.trim())L.push("Comentario del cliente: "+st.f.c.trim());
  if(st.f.ph.length)L.push("Fotos enviadas: "+st.f.ph.length);
@@ -185,14 +185,14 @@ function render(){
  if(s===2&&!v.diag){var u=U(),un=u==="m2"?"m²":"m³",mx=u==="m2"?500:200,chips=u==="m2"?[20,50,80,150,300]:[10,25,50,100];
   var seg=v.both?'<div class="seg" role="tablist"><button type="button" class="'+(u==="m3"?"on":"")+'" data-u="m3">Por capacidad (m³)</button><button type="button" class="'+(u==="m2"?"on":"")+'" data-u="m2">Por superficie interior (m²)</button></div><p style="margin:0 0 8px;font-size:12px;color:var(--tx2)">'+(u==="m3"?"Capacidad del estanque o piscina":"Suma de fondo, muros y losa superior")+'</p>':"";
   h=lab(v.both?"¿Cómo prefiere cotizar?":"Superficie aproximada")+seg+'<div class="box"><div class="qrow"><div class="qin"><input type="number" id="qn" inputmode="numeric" min="1" step="1" value="'+(isNaN(st.qty)?"":st.qty)+'" aria-label="Cantidad en '+un+'"><span>'+un+'</span></div><div style="flex:1"><input type="range" id="qr" min="1" max="'+mx+'" step="1" value="'+Math.min(st.qty||1,mx)+'" aria-label="Deslizar"><div class="rl"><span>1 '+un+'</span><span>'+mx+'+ '+un+'</span></div></div></div><div class="chips">'+chips.map(function(c){return '<button type="button" class="chip" data-q="'+c+'">'+c+' '+un+'</button>'}).join("")+'</div></div>'+
-   v.q.map(function(q){return lab(q.t)+(q.sys?sysCards(q,st.ans[q.k]||0):ops(q.o,st.ans[q.k]||0,q.k))}).join("")}
+   v.q.map(function(q){return lab(q.t)+(q.m?'<p style="margin:-4px 0 10px;font-size:13px;color:#5A6878">Si en terreno se dan ambas situaciones, puede marcar las dos.</p>':"")+(q.sys?sysCards(q,st.ans[q.k]||0):ops(q.o,sels(q),q.k,q.m))}).join("")}
  if(s===3){h=(v.diag?"":lab("Acceso al área")+ops(AC,st.ac,"ac"))+lab("Comuna de la obra")+'<select id="co" aria-label="Comuna">'+REF.map(function(c,i){return '<option value="'+i+'"'+(st.co===i?" selected":"")+'>'+c+'</option>'}).join("")+'<option value="'+REF.length+'"'+(st.co===REF.length?" selected":"")+'>Otra comuna (escribir)</option></select>';
   if(st.co===REF.length)h+='<input type="text" id="cot" list="rmlist" placeholder="Maipú" value="'+esc(st.coTxt)+'" style="margin-top:8px" aria-label="Escriba su comuna"><p style="margin:6px 0 0;font-size:12px;color:var(--tx2)">Escriba su comuna; le sugerimos las de la Región Metropolitana.</p>'}
  if(s===4&&st.sent){var pila=esc(st.f.n.split(/\s+/)[0]);h='<div class="done"><div class="ic"><i class="ti ti-check"></i></div><h2>¡Gracias, '+pila+'!</h2><p>Recibimos su solicitud. Lo contactaremos dentro de las próximas 24 horas hábiles para coordinar la visita técnica.</p>'+(st.f.e?'<p>Le enviamos una confirmación a su correo.</p>':'')+'<p style="margin-top:14px"><a href="#" class="bwa" id="wa2" style="display:inline-flex;width:auto;padding:12px 18px"><i class="ti ti-brand-whatsapp"></i> ¿Es urgente? Escríbanos por WhatsApp</a></p></div>'}
  else if(s===4){var e=v.diag?null:eff(v),cn=comuna(),out=!isRM(cn),big=v.max&&st.qty>v.max;
   var why=v.diag||e.v||(big?"Para superficies sobre "+v.max+" m² preparamos una propuesta a medida.":null)||(out?"Para obras en "+cn+" coordinamos la visita según la ubicación y el proyecto.":null);
   var qtxt=v.diag?"":st.qty+" "+(U()==="m2"?"m²":"m³");
-  var tags=[v.n].concat(v.diag?[]:[qtxt].concat(v.q.map(function(q){var o=q.o[st.ans[q.k]||0];return q.sys?SN[o[1].s]:o[0]}),[AC[st.ac][0]]),[cn]);
+  var tags=[v.n].concat(v.diag?[]:[qtxt].concat(v.q.map(function(q){var o=q.o[st.ans[q.k]||0];return q.sys?SN[o[1].s]:otx(q)}),[AC[st.ac][0]]),[cn]);
   st.msg="Hola DrycoChile, quiero cotizar: "+tags.join(", ").toLowerCase()+(!v.diag&&U()==="m3"?" (aprox. "+Math.round(area(e))+" m² interiores)":"")+".";
   var rng=why?null:range(e.p||v.p[e.s],v,e);
   st.est=rng?clp(rng[0])+" – "+clp(rng[1])+" + IVA":"No se mostró precio (requiere evaluación en terreno)";
@@ -202,7 +202,7 @@ function render(){
   h+='<button class="bwa" id="wa" type="button"><i class="ti ti-brand-whatsapp"></i> Cotizar por WhatsApp</button>'+contactForm()+'<p class="note">La visita técnica puede tener un valor según la ubicación y la complejidad del caso; se lo informamos antes de agendarla. Esta estimación no constituye una oferta.</p><div class="links"><button class="lnk" id="b4" type="button"><i class="ti ti-arrow-left"></i> Modificar datos</button><button class="lnk b" id="rs" type="button"><i class="ti ti-refresh"></i> Calcular otro proyecto</button></div>';
   if(!st.evRes){st.evRes=1;ev("cotizador_resultado",{precio:rng?1:0})}}
  $("body").innerHTML=h;$("main").scrollTop=0;bind()}
-function sel(el){var k=el.getAttribute("data-k"),i=+el.getAttribute("data-i");if(k==="ac")st.ac=i;else st.ans[k]=i;startEv();render()}
+function sel(el){var k=el.getAttribute("data-k"),i=+el.getAttribute("data-i");if(k==="ac")st.ac=i;else{var q=(SV[st.sv].q||[]).filter(function(z){return z.k===k})[0],mm=q&&q.m;if(mm&&mm.indexOf(i)>-1){var cur=sels(q).filter(function(j){return mm.indexOf(j)>-1}),at=cur.indexOf(i);if(at>-1){if(cur.length>1)cur.splice(at,1)}else cur.push(i);cur.sort();st.ans[k]=cur.length>1?cur:cur[0]}else st.ans[k]=i}startEv();render()}
 function bind(){
  [].forEach.call(document.querySelectorAll("[data-sv]"),function(el){el.onclick=function(){st.sv=el.getAttribute("data-sv");st.ans={};st.unit=SV[st.sv].u;st.qty=dq(st.unit);startEv();render()};el.onkeydown=function(x){if(x.key==="Enter"||x.key===" "){x.preventDefault();el.onclick()}}});
  [].forEach.call(document.querySelectorAll("[data-k]"),function(el){el.onclick=function(){var y=$("main").scrollTop;sel(el);$("main").scrollTop=y};el.onkeydown=function(x){if(x.key==="Enter"||x.key===" "){x.preventDefault();el.onclick()}}});
