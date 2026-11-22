@@ -921,7 +921,7 @@ function vConta(){var m=cMes||today().slice(0,7),k=contaMes(m),cfg=byId("config"
     (k.rem?lineF29("Remanente del mes anterior",k.rem,"Crédito que sobró antes","− "):"")+
     lineF29(k.remSig?"Remanente para el próximo mes":"IVA a pagar",k.remSig||k.ivaPagar,k.remSig?"Este mes tu crédito supera al débito: no pagas IVA":"","= ",1)+
     lineF29("Retención de boletas de honorarios",k.ret,"Lo que retuviste a quienes te emitieron boleta de honorarios","+ ")+
-    lineF29("PPM ("+num(k.ppmR)+" %)",k.ppm,"Pago provisional mensual sobre tus ventas netas con documento","+ ")+
+    lineF29("PPM ("+String(k.ppmR).replace(".",",")+" %)",k.ppm,"Pago provisional mensual sobre tus ventas netas con documento","+ ")+
     '<div class="f29t"><span>Total estimado a pagar</span><b>'+money(k.f29)+'</b></div>'+
     '<div class="fld" style="max-width:220px;margin-top:10px"><label for="ppmr">Tu tasa de PPM (%)</label><input id="ppmr" data-ppm="1" inputmode="decimal" value="'+esc(cfg.ppm==null?"":String(cfg.ppm))+'" placeholder="Ej: 0,25"><span class="hint">Pro Pyme General (14 D N°3): 0,125 % en 2025-2027 si es el año de inicio o vendiste menos de 50.000 UF el año anterior. Confírmalo con tu contador</span></div>'+
     '</div></div>';
