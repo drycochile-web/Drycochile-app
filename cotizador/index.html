@@ -169,7 +169,10 @@ function buildData(){var v=SV[st.sv],e=v.diag?null:eff(v),L=[],m2="";
  else L.push(v.n+": requiere diagnóstico en terreno");
  if(st.f.c.trim())L.push("Comentario del cliente: "+st.f.c.trim());
  if(st.f.ph.length)L.push("Fotos enviadas: "+st.f.ph.length);
- return {nombre:st.f.n.trim(),telefono:st.f.t.trim(),email:st.f.e.trim(),tipoCliente:"",servicios:[v.f],comuna:comuna(),m2:m2,urgencia:"",mensaje:L.join(" · "),autoriza:st.f.a,web:($("web")||{}).value||"",origen:"drycochile.cl · cotizador · página "+PAGES[page][0],fotos:st.f.ph.map(function(p){return {type:p.type,data:p.data}})}}
+ return {nombre:st.f.n.trim(),telefono:st.f.t.trim(),email:st.f.e.trim(),tipoCliente:"",servicios:[v.f],comuna:comuna(),m2:m2,urgencia:"",mensaje:L.join(" · "),autoriza:st.f.a,web:($("web")||{}).value||"",origen:"drycochile.cl · cotizador · página "+PAGES[page][0],precot:precot(v,e,m2),fotos:st.f.ph.map(function(p){return {type:p.type,data:p.data}})}}
+function precot(v,e,m2){var R=[];if(!v.diag)v.q.forEach(function(q){if(q.sys)return;R.push([q.t,otx(q)])});else R.push([v.n,"Requiere diagnóstico en terreno"]);
+ var rg=(!v.diag&&st.rng)?st.rng:[0,0];
+ return {estimado:st.est,desde:rg[0],hasta:rg[1],servicio:v.n,m2:m2,cantidad:(!v.diag&&U()==="m3")?st.qty+" m³":"",sistema:(e&&e.s&&e.s!=="x")?SN[e.s]:"",acceso:v.diag?"":AC[st.ac][0],comentario:st.f.c.trim(),pagina:PAGES[page][0],respuestas:R}}
 function call(fn,args){return fetch(EXEC,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({fn:fn,args:args}),redirect:"follow"}).then(function(r){return r.json()}).then(function(o){if(o&&o.ok)return o.r;throw new Error(o&&o.e||"ERR")})}
 function render(){
  var s=st.step;$("err").textContent="";
@@ -195,7 +198,7 @@ function render(){
   var tags=[v.n].concat(v.diag?[]:[qtxt].concat(v.q.map(function(q){var o=q.o[st.ans[q.k]||0];return q.sys?SN[o[1].s]:otx(q)}),[AC[st.ac][0]]),[cn]);
   st.msg="Hola DrycoChile, quiero cotizar: "+tags.join(", ").toLowerCase()+(!v.diag&&U()==="m3"?" (aprox. "+Math.round(area(e))+" m² interiores)":"")+".";
   var rng=why?null:range(e.p||v.p[e.s],v,e);
-  st.est=rng?clp(rng[0])+" – "+clp(rng[1])+" + IVA":"No se mostró precio (requiere evaluación en terreno)";
+  st.rng=rng;st.est=rng?clp(rng[0])+" – "+clp(rng[1])+" + IVA":"No se mostró precio (requiere evaluación en terreno)";
   h='<div class="tags">'+tags.map(function(t){return '<span>'+esc(t)+'</span>'}).join("")+'</div>';
   if(why)h+='<div class="res"><small>Su proyecto requiere evaluación en terreno</small><p class="t">'+esc(why)+' En la visita revisamos el soporte, los encuentros y los desagües, y le entregamos una propuesta con el sistema adecuado.</p></div>';
   else h+='<div class="res"><small>Estimación preliminar'+(e.s==="x"?"":" · "+SN[e.s].toLowerCase())+'</small><p class="p">'+clp(rng[0])+' – '+clp(rng[1])+'</p><small>Valores + IVA</small></div><div class="two"><div><h3>Incluye</h3>'+["Materiales","Mano de obra","Retiro de escombros","Garantía"].map(function(t){return '<p><i class="ti ti-check" style="color:var(--ok)"></i> '+t+'</p>'}).join("")+'</div><div><h3>Se confirma en terreno</h3>'+["Estado del soporte y humedad","Encuentros y desagües","Accesos y preparación"].map(function(t){return '<p><i class="ti ti-point" style="color:var(--tx2)"></i> '+t+'</p>'}).join("")+'</div></div>';
