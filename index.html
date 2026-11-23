@@ -1988,19 +1988,20 @@ function syncAdd(ignoreRest){if(!db)return;var ops=[],ign=[];
   Promise.all(ops).then(function(){var k=SYNC.nuevos.filter(function(x){return SYNC.sel[x.id]}).length;SYNC.nuevos=SYNC.nuevos.filter(function(x){return !SYNC.sel[x.id]&&ign.indexOf(x.id)<0});SYNC.acept=[];closeSheet();toast(k?k+" solicitud"+(k>1?"es agregadas":" agregada"):"Listo");render()},function(){toast("No se pudo guardar. Intenta de nuevo.")})}
 
 /* --- 2. solicitud: ficha con acciones --- */
-var SERVMAP={"Cubiertas y techos":"Cubiertas","Terrazas y balcones":"Terrazas y balcones","Subterráneos y estacionamientos":"Subterráneos y estacionamientos","Salas técnicas":"Salas técnicas","Hormigón y estanques":"Hormigón y estanques","Jardineras":"Jardineras","Fachadas":"Fachadas"};
+var SERVMAP={"Cubiertas y techos":"Cubiertas","Terrazas y balcones":"Terrazas y balcones","Subterráneos y estacionamientos":"Subterráneos y estacionamientos","Salas técnicas":"Salas técnicas","Salas técnicas e industriales":"Salas técnicas","Hormigón y estanques":"Hormigón y estanques","Jardineras":"Jardineras","Fachadas":"Fachadas"};
 function solServ(x){var l=Array.isArray(x.servicios)?x.servicios:[x.servicios];for(var i=0;i<l.length;i++){var v=SERVMAP[l[i]]||l[i];if(SERV.indexOf(v)>=0)return v}return "Otro"}
 function solDetail(r){var cl=byId("clientes",r.clienteId),tel=telWa(r.telefono||(cl&&cl.telefono)),est=r.estado||"Nueva";
   var cots=S.cotizaciones.filter(function(c){return r.clienteId&&c.clienteId===r.clienteId}),ags=S.agenda.filter(function(a){return r.clienteId&&a.clienteId===r.clienteId&&!a.hecho});
   var h='<div class="sh"><div><h2>'+esc(r.nombre||"Solicitud")+'</h2><div class="mini">'+esc([fdate(r.fecha)+(r.hora?" "+r.hora:""),r.canal||r.origen].filter(Boolean).join(" · "))+'</div></div><button class="x" data-close="1" aria-label="Cerrar">'+ic("x")+'</button></div>';
   var sb='<div class="chips">'+["Nueva","Por cotizar","En contacto","Visita agendada","Cotizada","Descartada"].map(function(e){return '<button class="chip'+(est===e?" on":"")+'" data-z="solest" data-v="'+esc(e)+'">'+esc(e)+'</button>'}).join("")+'</div>';
   sb+='<dl class="kv">'+kv("Servicio",(Array.isArray(r.servicios)?r.servicios:[r.servicios]).filter(Boolean).join(", "))+kv("Comuna",r.comuna)+kv("Superficie",r.m2?r.m2+" m²":"")+kv("Urgencia",r.urgencia)+kv("Teléfono",r.telefono||(cl&&cl.telefono))+kv("Correo",r.email||(cl&&cl.email))+kv("Tipo",r.tipoCliente)+kv("Mensaje y seguimiento",r.mensaje)+'</dl>';
+  var pc=r.precot;if(pc){var pm=parseFloat(String(pc.m2||"").replace(",","."))||0;sb+='<div class="sec">Pre-cotización web</div><dl class="kv">'+kv("Valor mostrado al cliente",pc.desde&&pc.hasta?clp(pc.desde)+" – "+clp(pc.hasta)+" + IVA":(pc.estimado||"Sin precio en pantalla"))+kv("Por m²",pc.desde&&pc.hasta&&pm?clp(pc.desde/pm)+" – "+clp(pc.hasta/pm)+" + IVA":"")+kv("Superficie del cálculo",pc.m2?pc.m2+" m²":"")+kv("Dato ingresado",pc.cantidad)+kv("Sistema elegido",pc.sistema)+(pc.respuestas||[]).map(function(x){return kv(x[0],x[1])}).join("")+kv("Acceso",pc.acceso)+kv("Página del cotizador",pc.pagina)+kv("Comentario del cliente",pc.comentario)+'</dl>'}
   if(r.fotos&&r.fotos.length)sb+='<div class="row-actions">'+r.fotos.map(function(u,i){return '<a class="btn" href="'+esc(u)+'" target="_blank" rel="noopener">'+ic("cam")+'Foto '+(i+1)+'</a>'}).join("")+'</div>';
   sb+='<div class="sec">Siguiente paso</div><div class="x7steps">';
   sb+=(tel.length>8?'<a class="btn" target="_blank" rel="noopener" href="https://wa.me/'+tel+'?text='+encodeURIComponent("Hola "+String(r.nombre||"").split(/\s+/)[0]+", le saluda Nicolás Vergara de Drycochile. Recibimos su solicitud"+(r.comuna?" en "+r.comuna:"")+". ¿Le acomoda coordinar una visita técnica?")+'">'+ic("wa")+'Responder por WhatsApp</a>':'');
   sb+='<button class="btn" data-z="solvisita">'+ic("agenda")+'Agendar visita técnica</button>';
-  sb+='<button class="btn pri" data-z="solcot">'+ic("pdf")+'Crear cotización</button></div>';
-  sb+='<div class="mini">'+(cl?'Cliente: '+esc(cl.nombre)+'.':'Al agendar o cotizar se crea el cliente con estos datos.')+' La cotización se abre en el cotizador rápido con nombre, comuna, superficie y servicio ya completos.</div>';
+  sb+='<button class="btn pri" data-z="solcot">'+ic("pdf")+(pc&&pc.desde?'Crear cotización con la pre-cotización':'Crear cotización')+'</button></div>';
+  sb+='<div class="mini">'+(cl?'Cliente: '+esc(cl.nombre)+'.':'Al agendar o cotizar se crea el cliente con estos datos.')+' La cotización se abre en el cotizador rápido con nombre, comuna, superficie y servicio ya completos'+(pc&&pc.desde?', y el valor por m² del punto medio de la pre-cotización.':'.')+'</div>';
   if(ags.length)sb+='<div class="sec">Agenda pendiente</div><div class="sublist">'+ags.sort(agSort).map(function(a){return agRow(a,true)}).join("")+'</div>';
   if(cots.length)sb+='<div class="sec">Cotizaciones del cliente</div><div class="sublist list">'+cots.sort(sorter("cotizaciones")).map(function(x){return rowHTML("cotizaciones",x)}).join("")+'</div>';
   return h+'<div class="sb">'+sb+'</div><div class="sf"><button class="btn" data-close="1">Cerrar</button><button class="btn" data-z="soledit">'+ic("edit")+'Editar</button></div>'}
@@ -2011,7 +2012,9 @@ function solVisita(r){if(!db)return;solCliente(r).then(function(cid){var cl=byId
   openForm("agenda",null,{titulo:"Visita técnica · "+(r.nombre||""),tipo:"Visita técnica",clienteId:cid,direccion:[cl.direccion,r.comuna||cl.comuna].filter(Boolean).join(", "),notas:[(Array.isArray(r.servicios)?r.servicios.join(", "):r.servicios),r.m2?r.m2+" m² informados":"",r.urgencia].filter(Boolean).join(". "),fecha:addDays(today(),1)})})}
 function solCot(r){if(!db)return;solCliente(r).then(function(cid){qp=null;qpInit();qp.servicio=solServ(r);qpApplyTpl(qpTplFor(qp.servicio));qpSetClient(cid);
   if(!qp.cliente.nombre){qp.cliente.nombre=r.nombre||"";qp.cliente.comuna=r.comuna||"";qp.cliente.telefono=r.telefono||"";qp.cliente.email=r.email||""}
-  var m=parseFloat(String(r.m2||"").replace(",","."));if(m)qp.m2=m;qp.solId=r.id;closeSheet();location.hash="cotpdf";toast(qp.cliente.direccion?"Completa el valor por m²":"Completa el valor por m² y la dirección")})}
+  var m=parseFloat(String(r.m2||"").replace(",","."));if(m)qp.m2=m;qp.solId=r.id;
+  var pc=r.precot,pm=pc?parseFloat(String(pc.m2||"").replace(",",".")):0,pv=false;if(pc&&pc.desde&&pc.hasta&&pm){qp.m2=pm;qp.valorM2=Math.round((pc.desde+pc.hasta)/2/pm/500)*500;pv=true}
+  closeSheet();location.hash="cotpdf";toast(pv?"Valor por m² cargado desde la pre-cotización web: revísalo"+(qp.cliente.direccion?"":" y completa la dirección"):(qp.cliente.direccion?"Completa el valor por m²":"Completa el valor por m² y la dirección"))})}
 
 /* --- 3. validez de cotizaciones --- */
 function cotValidez(c){return +(c.validez||(c.pdf&&c.pdf.validez)||20)}
