@@ -1787,7 +1787,7 @@ function czUpdate(){var c=czCalc();var o=document.getElementById("czout");if(o)o
 function czDesc(){var c=czCalc();return cz.sistema+": "+c.rows.filter(function(r){return r.on}).map(function(r){return r.m.nombre}).join(" + ")+". Superficie "+num(cz.m2)+" m², encuentros "+num(cz.ml)+" ml, plazo "+num(cz.dias)+" días hábiles."}
 
 /* ---------- simulador de caja ---------- */
-var KS_PRE={"1361":[20905830,3360000],"1362":[16857450,2400000],"1363":[20905830,3360000],"1364":[16857450,2400000],"1367":[16513240,2640000],"1368":[13203220,1920000],"1365":[1602690,480000],"1366":[2109410,600000],"1358":[2835000,600000],"1359":[3861755,720000],"1360":[1050000,360000]};
+var KS_PRE={"1361":[20905830,3360000],"1362":[16857450,2400000],"1363":[20905830,3360000],"1364":[16857450,2400000],"1367":[16513240,2640000],"1368":[13203220,1920000],"1365":[1602690,480000],"1366":[2109410,600000],"1358":[2835000,600000],"1359":[3861755,720000],"1360":[1050000,360000],"1369":[7154100,1440000],"1370":[5732400,1200000]};
 var ks=null;
 function ksCots(){return S.cotizaciones.filter(function(c){return (+c.neto||0)>0&&c.estado!=="Rechazada"}).sort(function(a,b){return String(b.numero).localeCompare(String(a.numero),"es",{numeric:true})})}
 function ksCost(c){var p=KS_PRE[String(c.numero||"").replace(/\D/g,"")];return {mat:c.simMat!=null?+c.simMat:(p?p[0]:null),mo:c.simMo!=null?+c.simMo:(p?p[1]:null)}}
